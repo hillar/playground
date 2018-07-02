@@ -12,7 +12,7 @@ function highlight(o) {
   for (const key of Object.keys(o)){
    if (key !== 'content'){
      for (const hl of o[key]){
-       t = t.replace(new RegExp(escapeRegExp(hl), 'g'),'<b><i>'+hl+'</i></b>')
+       t = t.replace(new RegExp(escapeRegExp(hl), 'g'),'<span class="field">'+hl+'<span class="tooltip"> '+key+' </span></span>')
      }
    }
   }
@@ -29,7 +29,6 @@ function findKeyByValue(o,value){
      }
    }
   }
-  console.log('did not found', value)
   return
 }
 
@@ -44,7 +43,8 @@ export function annotate(e,o) {
     const button = document.createElement('button');
     button.innerHTML = 'save';
     button.onclick = function(){
-      alert(JSON.stringify(o,null,2))
+      delete(o.content)
+      parent.innerHTML = '<pre>'+JSON.stringify(o,null,2)+'</pre>'
       return false
     }
     parent.appendChild(text)
@@ -59,6 +59,7 @@ export function annotate(e,o) {
           if (e.altKey) {
             const todel = findKeyByValue(o,value)
             if (todel) {
+              // ask user
               const del = confirm(todel+':'+value+'<- remove that ..')
               if (del){
                 if (o[todel])  {
@@ -68,9 +69,11 @@ export function annotate(e,o) {
               }
             }
           } else {
+            // ask user
             const key = prompt(value +" <- What is that?",findKeyByValue(o,value))
             if (key && key.trim() !== '') {
               let overwrite = true
+              // ask user
               if ( o[key] )  overwrite = confirm(o[key]+' :: overwrite ?')
               if (overwrite) o[key] = [value]
               console.log('added',key,value)

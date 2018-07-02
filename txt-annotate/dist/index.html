@@ -4,15 +4,46 @@
 	<meta charset='utf-8'>
 	<meta name='viewport' content='width=device-width'>
 	<style>
-		body {
-			font-family: 'Helvetica Neue', Arial, sans-serif;
-			color: #333;
-			font-weight: 300;
-		}
+	.field {
+	    position: relative;
+	    display: inline-block;
+	    border-bottom: 1px dotted black;
+			background-color: yellow;
+	}
+
+	.field .tooltip {
+	    visibility: hidden;
+	    width: 120px;
+	    background-color: black;
+	    color: #fff;
+	    text-align: center;
+	    border-radius: 6px;
+	    padding: 5px 0;
+	    position: absolute;
+	    z-index: 1;
+	    top: 150%;
+	    left: 50%;
+	    margin-left: -60px;
+	}
+
+	.field .tooltip::after {
+	    content: "";
+	    position: absolute;
+	    bottom: 100%;
+	    left: 50%;
+	    margin-left: -5px;
+	    border-width: 5px;
+	    border-style: solid;
+	    border-color: transparent transparent black transparent;
+	}
+
+	.field:hover .tooltip {
+	    visibility: visible;
+	}
 	</style>
 </head>
 <body>
-	<p>just some other text...</p>
+	<p>just some other text...
 	<hr>
   <script src="main.js"></script>
 	<hr>
