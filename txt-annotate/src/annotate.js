@@ -8,9 +8,10 @@ function linebreaks(text){
 }
 
 function highlight(o) {
-  let t = o.content
+  if (!o.content) return ''
+  let t = o.content.join('\n\n')
   for (const key of Object.keys(o)){
-   if (key !== 'content'){
+   if (key !== 'content' && key !== 'id'){
      for (const hl of o[key]){
        t = t.replace(new RegExp(escapeRegExp(hl), 'g'),'<span class="field">'+hl+'<span class="tooltip"> '+key+' </span></span>')
      }
@@ -21,7 +22,7 @@ function highlight(o) {
 
 function findKeyByValue(o,value){
   for (const key of Object.keys(o)){
-   if (key !== 'content'){
+   if (key !== 'content' && key !== 'id'){
      for (const hl of o[key]){
        if (hl === value) {
          return key
