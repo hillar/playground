@@ -4,6 +4,19 @@
 	<meta charset='utf-8'>
 	<meta name='viewport' content='width=device-width'>
 	<style>
+
+.holder {
+  height: 110px;
+  width: 310px;
+  margin: 10px;
+  border: solid 1px black;
+  background-color: white;
+  display: inline-block;
+}
+
+.hovered {
+  border: dotted 2px green;
+}
 	.field {
 	    position: relative;
 	    display: inline-block;
@@ -41,6 +54,25 @@
 	    visibility: visible;
 	}
 	</style>
+	<script>
+	// chrome works without of it
+	var dragged
+	function dragstart_handler(event) {
+	 // Add the target element's id to the data transfer object
+	 event.dataTransfer.setData("text/plain", event.target.id);
+	 dragged = event.target
+	 console.dir(event)
+	}
+
+	/*
+	document.addEventListener('drop',(event) => {
+
+	  console.log('document:dropped');
+	  console.dir(event)
+		event.preventDefault();
+	})
+	*/
+	</script>
 </head>
 <body>
 	<p>just some other text...
