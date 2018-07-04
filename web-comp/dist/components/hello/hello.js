@@ -50,7 +50,7 @@
     }
 
   }
-
-  customElements.define('hello-hello', Hello)
+  let customElementRegistry = window.customElements;
+  customElementRegistry.define('hello-hello', Hello)
 
 })()
