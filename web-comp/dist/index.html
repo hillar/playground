@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head lang='en'>
+	<meta charset='utf-8'>
+	<meta name='viewport' content='width=device-width'>
+	<style>
+	.dropzone {
+	width: 200px;
+	height: 20px;
+	background: green;
+	margin-bottom: 10px;
+	padding: 10px;
+}
+	</style>
+	<script>
+	var dragged;
+
+/* events fired on the draggable target */
+document.addEventListener("drag", function( event ) {
+
+}, false);
+
+document.addEventListener("dragstart", function( event ) {
+		// store a ref. on the dragged elem
+		dragged = event.target;
+		// make it half transparent
+		event.target.style.opacity = .5;
+}, false);
+
+document.addEventListener("dragend", function( event ) {
+		// reset the transparency
+		event.target.style.opacity = "";
+}, false);
+
+/* events fired on the drop targets */
+document.addEventListener("dragover", function( event ) {
+		// prevent default to allow drop
+		event.preventDefault();
+}, false);
+
+document.addEventListener("dragenter", function( event ) {
+		// highlight potential drop target when the draggable element enters it
+		if ( event.target.className == "dropzone" ) {
+				event.target.style.background = "purple";
+		}
+
+}, false);
+
+document.addEventListener("dragleave", function( event ) {
+		// reset background of potential drop target when the draggable element leaves it
+		if ( event.target.className == "dropzone" ) {
+				event.target.style.background = "";
+		}
+
+}, false);
+
+document.addEventListener("drop", function( event ) {
+		// prevent default action (open as link for some elements)
+		// event.preventDefault();
+		// move dragged elem to the selected drop target
+		if ( event.target.className == "dropzone" ) {
+				event.target.style.background = "";
+		}
+		console.log('document drop',event.target)
+		if (event.target.doDrop) event.target.doDrop(dragged)
+
+}, false);
+
+	</script>
+	<link rel="import" href="./components/hello/hello.html">
+</head>
+<body>
+
+	<hello-hello name='1234' style="background-color:#E6E6FA"></hello-hello>
+	<hello-hello name='12345' ></hello-hello>
+	<hello-hello name='123456' ></hello-hello>
+	<div class="dropzone"></div>
+	<script src="main.js"></script>
+</body>
+</html>
