@@ -13,9 +13,10 @@ class EditableList extends HTMLElement {
      constructor() {
          super();
          const shadow = this.attachShadow({ mode: 'open' });
-         const editableListContainer = document.createElement('div');
+         this.objects = []
          const title = this.title;
          const listItems = this.items;
+         const editableListContainer = document.createElement('div');
          editableListContainer.classList.add('editable-list');
          editableListContainer.innerHTML = `
              <style>
@@ -53,10 +54,10 @@ class EditableList extends HTMLElement {
 
      connectedCallback() {
          let removeElementButtons = [...this.shadowRoot.querySelectorAll('.editable-list-remove-item')];
-         let addElementButton = this.shadowRoot.querySelector('.editable-list-add-item');
          this.itemList = this.shadowRoot.querySelector('.item-list');
          this.handleRemoveItemListeners(removeElementButtons);
      }
+
      get title() { return this.getAttribute('title') || ''; }
 
      get items() {
@@ -80,7 +81,9 @@ class EditableList extends HTMLElement {
      removeListItem(e) { e.target.parentNode.remove(); }
 
      doDrop(element){
-       if (! element._name) return
+       if (! element.name) return
+       if (this.objects.includes(element.name)) return
+       this.objects.push(element.name)
        console.log('ondrop',element._name)
        const li = document.createElement('li');
        const button = document.createElement('button');
