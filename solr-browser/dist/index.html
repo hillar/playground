@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+
+<head lang='en'>
+	<meta charset='utf-8'>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+	</style>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
+	<link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.4.85/css/materialdesignicons.min.css">
+	<script>
+		var dragged;
+		/* events fired on the draggable target */
+		document.addEventListener("drag", function(event) {}, false);
+		document.addEventListener("dragstart", function(event) {
+			// store a ref. on the dragged elem
+			dragged = event.target;
+			// make it half transparent
+			event.target.style.opacity = .5;
+		}, false);
+		document.addEventListener("dragend", function(event) {
+			// reset the transparency
+			event.target.style.opacity = "";
+		}, false);
+		/* events fired on the drop targets */
+		document.addEventListener("dragover", function(event) {
+			// prevent default to allow drop
+			event.preventDefault();
+		}, false);
+		document.addEventListener("dragenter", function(event) {
+			// highlight potential drop target when the draggable element enters it
+			if (event.target.className == "dropzone") {
+				event.target.style.background = "purple";
+			}
+		}, false);
+		document.addEventListener("dragleave", function(event) {
+			// reset background of potential drop target when the draggable element leaves it
+			if (event.target.className == "dropzone") {
+				event.target.style.background = "";
+			}
+		}, false);
+		document.addEventListener("drop", function(event) {
+			// prevent default action (open as link for some elements)
+			event.preventDefault();
+			// clear dropzone backgrounds
+			if (event.target.className == "dropzone") {
+				event.target.style.background = "";
+			}
+			if (event.target.doDrop) event.target.doDrop(dragged)
+		}, false);
+	</script>
+</head>
+
+<body>
+
+	<script src="main.js"></script>
+
+	<section>
+		<div align="center" class="field container is-fullwidth is-grouped">
+			<div class="field is-fluid is-expanded has-addons">
+				<button class="is-disabled">Archive</button>
+				<div class="control is-expanded is-focused is-clearfix">
+					<input id="searchText" onchange="doSearch()" type="text" placeholder="Search .. " class="input">
+					<span class="validity"></span>
+				</div>
+				<div class="control">
+					<span class="select">
+						<select id="searchAndOr" onchange="doSearch()"> AND <option>AND</option><option>OR</option></select>
+					</span>
+				</div>
+				<button onclick="doSearch()" class="button is-success"><span class="icon"><i class="mdi mdi-magnify mdi-24px"></i></span></button>
+			</div>
+			<div class="field is-grouped">
+				&nbsp;<button class="button is-primary"><span class="icon"><i class="mdi mdi-settings mdi-24px"></i></span></button>
+				&nbsp;<button class="button is-primary"><span class="icon"><i class="mdi mdi-upload mdi-24px"></i></span></button>
+				&nbsp;<button class="button is-primary"><span class="icon"><i class="mdi mdi-email mdi-24px"></i></span></button>
+				&nbsp;<button class="button is-primary"><span class="icon"><i class="mdi mdi-help mdi-24px"></i></span></button>
+			</div>
+		</div>
+	</section>
+
+	<solr-query id="solrQuery" url="/solr/solrdefalutcore" class="field container is-fullwidth is-grouped"></solr-query>
+
+  <div id='hint'></div>
+
+	<script>
+
+	  function e(n) { return document.getElementById(n)}
+		function doSearch(){
+			let q = e("searchText").value
+			let op = e("searchAndOr").value
+			console.log('search raw',q,op)
+			if (q === '*')  {
+				e("searchText").value = q = '*:*'
+				//return
+			}
+			// ? dispatchEvent onchange
+			// TODO all that :* -> :[* TO *] jadabadadaaa
+			if (q.length > 2) {
+
+				if (q.includes(' AND ') || q.includes(' OR ')) op = null
+				console.log('search real',q,op)
+				const solrQuery = e('solrQuery')
+				solrQuery.q = {q:q,op:op}
+
+			} else {
+				document.getElementById("hint").innerText = 'query to short'
+			}
+		}
+	</script>
+</body>
+
+</html>

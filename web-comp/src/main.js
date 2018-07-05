@@ -10,9 +10,11 @@ if (window.customElements) {
     console.log('import HTML ok')
   } else {
     document.body.innerHTML='<h1>import HTML is not supported ;(</h1>'
+    // https://developer.mozilla.org/en-US/docs/Web/Web_Components/HTML_Imports
+    // Firefox will not ship HTML Imports
   }
 } else {
-  document.body.innerHTML='<h1>this brwoser is not supported ;(</h1>'
+  document.body.innerHTML='<h1>customElements is not supported ;(</h1>'
 }
 
 class EditableList extends HTMLElement {
