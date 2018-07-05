@@ -5,6 +5,12 @@ console.log('main',dummy())
 // check customElements
 if (window.customElements) {
   console.log('customElements ok')
+  // check HTML Imports
+  if ('import' in document.createElement('link')){
+    console.log('import HTML ok')
+  } else {
+    document.body.innerHTML='<h1>import HTML is not supported ;(</h1>'
+  }
 } else {
   document.body.innerHTML='<h1>this brwoser is not supported ;(</h1>'
 }
