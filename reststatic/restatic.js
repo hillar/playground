@@ -42,37 +42,40 @@ module.exports = {
           router.static = new Static('./','static',logger)
         }
 
+
         // TODO, 'run' all routers for test
 
         if (!options.auth) {
           const Auth = require('./auth')
-          options.auth = new Auth()
+          options.auth = new Auth('example',logger)
         }
+        const auth = options.auth
 
-        const server = http.createServer((req, res) => {
+        const server = http.createServer( async (req, res) => {
             // parse login and password from headers
-           const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
-           const strauth = new Buffer(b64auth, 'base64').toString()
-           const splitIndex = strauth.indexOf(':')
-           const user = strauth.substring(0, splitIndex)
-           const password = strauth.substring(splitIndex + 1)
-           // verify login and password are set and correct
-            if (!user || !password || !options.auth.func(user,password)) {
-              if (user) logger.info('sending reauth',user)
-              const header = `Basic realm=\"${options.auth.realm}\"`
+            const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
+            const strauth = new Buffer(b64auth, 'base64').toString()
+            const splitIndex = strauth.indexOf(':')
+            const username = strauth.substring(0, splitIndex)
+            const password = strauth.substring(splitIndex + 1)
+            if (username && password ) {
+              req.user = await auth.verify(username, password)
+            }
+            if (!req.user){
+              if (username) logger.info({reauth:username})
+              const header = `Basic realm=\"${auth.realm}\"`
               res.setHeader("WWW-Authenticate", header);
               res.writeHead(401)
               res.end()
               return
             }
-            req.user = user
             const method = req.method.toLowerCase()
             const route = decodeURIComponent(req.url).split('/')[1].toLowerCase()
             if (router[route] && router[route][method]) {
-              logger.info({user,method,route})
+              logger.debug({username,method,route})
               router[route][method](req, res)
             } else {
-              logger.warning({user,notexist:{method,route}})
+              logger.warning({username,remoteip:req.socket.remoteAddress,notexist:{method,route}})
               res.writeHead(404)
               res.end()
             }
@@ -90,10 +93,10 @@ module.exports = {
         })
 
         process.on('SIGINT', function () {
-            server.close(function () {
+          //  server.close(function () {
               logger.info('SIGINT')
               process.exit(0)
-            })
+            //})
         })
 
         process.on('SIGTERM', function () {

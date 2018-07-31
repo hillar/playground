@@ -4,9 +4,10 @@ const Handler = require('./handler')
 const STATICROOT = './'
 const STATICROUTE = 'static'
 
+
 module.exports = class StaticHandler extends Handler {
-  constructor (root = STATICROOT,route = STATICROUTE, logger) {
-    super(logger)
+  constructor (root = STATICROOT,route = STATICROUTE, logger,allowed) {
+    super(logger,allowed)
     this.root = root
     this.path = root + '/' + route
     // die if path does not exists
@@ -17,18 +18,21 @@ module.exports = class StaticHandler extends Handler {
       }
     })
   }
+  //@before ... waitng for decorators ...
   get (req,res) {
-    const filename = this.root + decodeURIComponent(req.url)
-    fs.readFile(filename, (err,content) => {
-      if (err) {
-        this.logger.warning({notexists:filename,user:this.user(req),remoteip:this.ip(req)})
-        res.writeHead(404)
-        res.end()
-      } else {
-        this.logger.notice({access:filename,user:this.user(req),remoteip:this.ip(req)})
-        res.write(content)
-        res.end()
-      }
-    })
+    if (this.before(req,res)) {
+      const filename = this.root + decodeURIComponent(req.url)
+      fs.readFile(filename, (err,content) => {
+        if (err) {
+          this.logger.warning({user:this.user(req),remoteip:this.ip(req),notexists:{static:filename}})
+          res.writeHead(404)
+          res.end()
+        } else {
+          this.logger.notice({user:this.user(req),remoteip:this.ip(req),access:filename,})
+          res.write(content)
+          res.end()
+        }
+      })
+    }
   }
 }
