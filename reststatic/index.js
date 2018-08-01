@@ -1,5 +1,4 @@
 
-const cliParams = require('commander')
 const restatic = require('./restatic')
 
 const Logger = require('./logger')
@@ -15,9 +14,9 @@ rest.kala.get = (req,res) => {
   res.write('   maja')
 }
 
-rest.user = new Route(logger,['a','b','guest'])
+rest.user = new Route(logger,'*')
 //rest.maja.allowed = 'admins'
-const allowed = ['guest','*']
+const allowed = ['guest']
 const groups = 'c3'
 const fn = (req,res) => {
   console.log(req.user);
@@ -25,7 +24,7 @@ const fn = (req,res) => {
 }
 rest.user.get  = {allowed, groups, fn}
 
-rest.kala3 = new Route(logger,['a','b','c'])
+rest.kala3 = new Route(logger,['a','b','c'],'1234')
 rest.kala3.post = () => {}
 rest.kala3.delete = () => {}
 

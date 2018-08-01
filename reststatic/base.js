@@ -21,6 +21,8 @@ module.exports = class Base {
 
     this._allowed = null
     this['isinallowed'] = () => {return false}
+    this.allowed = allowed
+    /*
     if (allowed) {
       if (Array.isArray(allowed)){
         this._allowed = allowed
@@ -43,6 +45,7 @@ module.exports = class Base {
         }
       }
     }
+    */
   }
   get setters () {
     function dive(i){
@@ -62,12 +65,12 @@ module.exports = class Base {
   set allowed (allowed) {
     if (allowed) {
       if (Array.isArray(allowed)){
-        this._allowed = allowed
+        this._allowed = [...(new Set([...allowed]))]
       } else {
         if (Object.prototype.toString.call(allowed) === '[object String]') {
           if (allowed === '*' ) {
             this._allowed = allowed
-            this['isinallowed'] = () => {return true}
+            this['isinallowed'] = () => {return true} // ! allow all
           } else {
             this._allowed = [allowed]
           }
@@ -99,6 +102,7 @@ module.exports = class Base {
   }
 
   before (req, res, method, route) {
+
     return new Promise((resolve) => {
       if (!req.user || !req.user.memberOf) {
         this.logger.emerg({method,route,shoulnothappen:'no req user'})
@@ -107,18 +111,18 @@ module.exports = class Base {
         resolve(false)
       }
       if (!this.isinallowed(req.user.memberOf)) {
-        this.logger.warning({method,route,notinallowed:req.user,allowed:this.allowed})
+        this.logger.warning({method,route,notinallowed:req.user})
         res.writeHead(403)
         res.end()
         resolve(false)
       }
       resolve(true)
     })
-
   }
-
+  /*
   after (req,res) {
     //noop
   }
+  */
 
 }

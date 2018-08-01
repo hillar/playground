@@ -21,7 +21,28 @@ const Base = require('./base')
 module.exports = class Route  extends Base {
 
   constructor (logger,allowed,groups) {
-    super(logger, allowed, groups)
+    super(logger, allowed)
+    this._groups = '*'
+    this['isingroup'] = () => {return true}
+    this.groups = groups
+  }
+  get groups () { return this._groups}
+  set groups (groups) {
+    console.log('set groups', groups)
+    if (groups) {
+      if (groups === '*') return
+      if (!Array.isArray(groups)) groups = [groups]
+      if (Array.isArray(groups)){
+        this._groups = [...(new Set([...groups]))]
+      }
+      if (Array.isArray(this._groups)){
+        this['isingroup'] = (memberOf) => {
+          return this._groups.some(function (v) {
+              return memberOf.indexOf(v) >= 0
+          })
+        }
+      }
+    }
   }
 
   get methods () {
@@ -33,7 +54,6 @@ module.exports = class Route  extends Base {
   }
 
   setMethod (name, optionsorfn, allowed, groups) {
-    console.log(name, optionsorfn)
     let fn
     let a
     let g
@@ -59,14 +79,13 @@ module.exports = class Route  extends Base {
     }
     // ? this['__'+name].bind(this)
     this['_'+name] = {}
+    // TODO ....
     this['_'+name].allowed = a
     this['_'+name].groups = g
     this.add2Allowed(a)
   }
   get get() {return this.__get}
   set get(options) {
-    console.dir(options)
-    console.log(Object.prototype.toString.call(options))
     this.setMethod ('get', options)
   }
 

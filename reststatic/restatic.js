@@ -47,16 +47,29 @@ module.exports = {
         for (const route of Object.keys(router)){
             const methods = router[route].methods
             const allowed = router[route].allowed
+            const groups = router[route].groups
             const setters = router[route].setters
             if (methods.length < 1) throw new Error('no methods for route '+ route)
             if (allowed === null) logger.warning('nobody allowed to '+ route)
-            routes.push({route,allowed,methods,setters})
+            let mm = []
+            for (const method of methods) {
+                if (router[route]['_'+method]) {
+                  let tmp = {}
+                    tmp[method] = {allowed:router[route]['_'+method].allowed,groups:router[route]['_'+method].groups}
+                  mm.push(tmp)
+                }
+                else mm.push(method)
+
+
+            }
+            routes.push({route,allowed,groups,setters,methods:mm})
         }
         if (options.generateSampleConfig) {
           console.log(JSON.stringify(routes,null,2))
           process.exit(0)
         }
         console.dir(routes)
+        console.log(JSON.stringify(routes,null,2))
 
         // TODO, 'run' all routers for test
 
