@@ -5,22 +5,26 @@ const restatic = require('./restatic')
 const Logger = require('./logger')
 const logger = new Logger()
 
-const Handler = require('./handler')
+const Route = require('./route')
 const rest = {}
 
-rest.kala = new Handler(logger)
-rest.kala.get = () => {}
-rest.maja = new Handler(logger,'*')
+rest.kala = new Route(logger,'*')
+rest.kala.get = (req,res) => { console.log('kala!!!!');
+  res.write('kala')
+  res.write('kalamaja')
+}
+rest.maja = new Route(logger)
 rest.maja.get = () => {}
-rest.kala2 = new Handler(logger,'maja')
-//rest.kala2.get = () => {}
-rest.kala3 = new Handler(logger,['a','b','c'])
-rest.kala3.get = () => {}
+rest.maja.allowed = 'siin ei ole kala'
+rest.kala2 = new Route(logger,'maja')
+rest.kala2.get = () => {}
+rest.kala3 = new Route(logger,['a','b','c'])
+rest.kala3.get = {allowed:'guest', groups:'sdfsdf', fn:() => {}}
 rest.kala3.post = () => {}
 rest.kala3.delete = () => {}
 
 
-const config = {}
+const config = require('./config')
 config.portListen = 4444
 config.ipListen = '0.0.0.0'
 
@@ -40,7 +44,8 @@ const main = async () => {
       //auth: {func:function(u,p){ console.log('auth',u,p);return true; }},
       logger: logger, //new Logger(),
       //static: {root:'./',route:'static'},
-      rest: rest
+      rest: rest,
+      generateSampleConfig: true
     })
   } catch (e) {
     logger.emerg(e)

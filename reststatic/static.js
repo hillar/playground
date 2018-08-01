@@ -1,24 +1,50 @@
 const fs = require( 'fs')
-const Handler = require('./handler')
+const Route = require('./route')
+const Method = require('./method')
+
+/*
+
+sample extended Route
+allows * to get files from static dir of current working dir
+
+*/
 
 const STATICROOT = './'
 const STATICROUTE = 'static'
 
 
-module.exports = class StaticHandler extends Handler {
+module.exports = class StaticRoute extends Route {
+
   constructor (logger, allowed = '*', root = STATICROOT, route = STATICROUTE) {
     super(logger,allowed)
-    this.root = root
-    this.path = root + '/' + route
+    this._root = root
+    this._route = route
+    this._path = this.root + '/' + this.route
     // die if path does not exists
-    fs.open(this.path, 'r', async (err) => {
+    fs.open(this._path, 'r', async (err) => {
       if (err) {
         this.logger.emerg(err)
         process.exit(1)
       }
     })
   }
-  //@before ... waitng for decorators,now called in restatic
+
+  get path () {
+    return this._path
+  }
+
+  get root () { return this._root }
+  set root (root) {
+    this._root = root
+    this._path = this.root + '/' + this.route
+  }
+
+  get route () { return this._route}
+  set route (route) {
+    this._route = route
+    this._path = this.root + '/' + this.route
+  }
+
   get (req,res) {
     const filename = this.root + decodeURIComponent(req.url)
     fs.readFile(filename, (err,content) => {
@@ -33,5 +59,5 @@ module.exports = class StaticHandler extends Handler {
       }
     })
   }
-  //@after ...
+
 }
