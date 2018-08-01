@@ -22,30 +22,7 @@ module.exports = class Base {
     this._allowed = null
     this['isinallowed'] = () => {return false}
     this.allowed = allowed
-    /*
-    if (allowed) {
-      if (Array.isArray(allowed)){
-        this._allowed = allowed
-      } else {
-        if (Object.prototype.toString.call(allowed) === '[object String]') {
-          if (allowed === '*' ) {
-            this._allowed = allowed
-            this['isinallowed'] = () => {return true}
-          } else {
-            this._allowed = [allowed]
-          }
 
-        }
-      }
-      if (Array.isArray(this._allowed)){
-        this['isinallowed'] = (memberOf) => {
-          return this._allowed.some(function (v) {
-              return memberOf.indexOf(v) >= 0
-          })
-        }
-      }
-    }
-    */
   }
   get setters () {
     function dive(i){
@@ -62,6 +39,7 @@ module.exports = class Base {
     return dive(this)
   }
 
+  get allowed () { return this._allowed}
   set allowed (allowed) {
     if (allowed) {
       if (Array.isArray(allowed)){
@@ -87,10 +65,8 @@ module.exports = class Base {
     }
 
   }
-
-  get allowed () { return this._allowed}
   add2Allowed (allowed) {
-    if (allowed === '*') return
+    if (allowed === '*') return 
     const ca = this.allowed
     if (ca === '*') return
     if (ca === null) {
