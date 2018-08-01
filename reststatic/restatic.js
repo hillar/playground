@@ -39,9 +39,19 @@ module.exports = {
         const router = options.rest
         if (!router.static) {
           const Static = require('./static')
-          router.static = new Static('./','static',logger)
+          router.static = new Static(logger)
         }
 
+
+        const routes = []
+        for (const route of Object.keys(router)){
+            const methods = router[route].methods
+            const allowed = router[route].allowed
+            if (methods.length < 1) throw new Error('no methods for route '+ route)
+            if (allowed === null) logger.warning('nobody allowed to '+ route)
+            routes.push({route,allowed,methods})
+        }
+        console.log(JSON.stringify(routes,null,2))
 
         // TODO, 'run' all routers for test
 
@@ -72,8 +82,11 @@ module.exports = {
             const method = req.method.toLowerCase()
             const route = decodeURIComponent(req.url).split('/')[1].toLowerCase()
             if (router[route] && router[route][method]) {
-              logger.debug({username,method,route})
+              logger.debug({username,method,route,handler:router[route]._self()})
+
+              router[route].before(req, res)
               router[route][method](req, res)
+              router[route].after(req, res)
             } else {
               logger.warning({username,remoteip:req.socket.remoteAddress,notexist:{method,route}})
               res.writeHead(404)
