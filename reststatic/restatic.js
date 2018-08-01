@@ -56,6 +56,7 @@ module.exports = {
           console.log(JSON.stringify(routes,null,2))
           process.exit(0)
         }
+        console.dir(routes)
 
         // TODO, 'run' all routers for test
 
@@ -87,7 +88,7 @@ module.exports = {
             const route = decodeURIComponent(req.url).split('/')[1].toLowerCase()
             if (router[route] && router[route][method]) {
               logger.debug({username,method,route})
-              const ok = await router[route].before(req, res)
+              const ok = await router[route].before(req, res, method,route)
               if (ok) await router[route][method](req, res)
               //router[route].after(req, res)
               if (!res.finished) res.end()

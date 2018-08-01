@@ -86,17 +86,28 @@ module.exports = class Base {
   }
 
   get allowed () { return this._allowed}
+  add2Allowed (allowed) {
+    if (allowed === '*') return
+    const ca = this.allowed
+    if (ca === '*') return
+    if (ca === null) {
+      this.allowed = allowed
+      return
+    }
+    if (!Array.isArray(allowed)) allowed = [allowed]
+    this._allowed = [...(new Set([...ca, ...allowed]))]
+  }
 
-  before (req,res) {
+  before (req, res, method, route) {
     return new Promise((resolve) => {
       if (!req.user || !req.user.memberOf) {
-        this.logger.emerg({shoulnothappen:'no req user'})
+        this.logger.emerg({method,route,shoulnothappen:'no req user'})
         res.writeHead(403)
         res.end()
         resolve(false)
       }
       if (!this.isinallowed(req.user.memberOf)) {
-        this.logger.warning({notinallowed:req.user})
+        this.logger.warning({method,route,notinallowed:req.user,allowed:this.allowed})
         res.writeHead(403)
         res.end()
         resolve(false)

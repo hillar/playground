@@ -9,17 +9,23 @@ const Route = require('./route')
 const rest = {}
 
 rest.kala = new Route(logger,'*')
-rest.kala.get = (req,res) => { console.log('kala!!!!');
+rest.kala.get = (req,res) => {
+  console.log('kala!!!!');
   res.write('kala')
-  res.write('kalamaja')
+  res.write('   maja')
 }
-rest.maja = new Route(logger)
-rest.maja.get = () => {}
-rest.maja.allowed = 'siin ei ole kala'
-rest.kala2 = new Route(logger,'maja')
-rest.kala2.get = () => {}
+
+rest.user = new Route(logger,['a','b','guest'])
+//rest.maja.allowed = 'admins'
+const allowed = ['guest','*']
+const groups = 'c3'
+const fn = (req,res) => {
+  console.log(req.user);
+  res.write(JSON.stringify(req.user))
+}
+rest.user.get  = {allowed, groups, fn}
+
 rest.kala3 = new Route(logger,['a','b','c'])
-rest.kala3.get = {allowed:'guest', groups:'sdfsdf', fn:() => {}}
 rest.kala3.post = () => {}
 rest.kala3.delete = () => {}
 
@@ -45,7 +51,7 @@ const main = async () => {
       logger: logger, //new Logger(),
       //static: {root:'./',route:'static'},
       rest: rest,
-      generateSampleConfig: true
+      generateSampleConfig: false
     })
   } catch (e) {
     logger.emerg(e)

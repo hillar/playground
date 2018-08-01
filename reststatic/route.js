@@ -32,7 +32,7 @@ module.exports = class Route  extends Base {
     return _methods
   }
 
-  setMethod (name, optionsorfn,allowed,groups) {
+  setMethod (name, optionsorfn, allowed, groups) {
     console.log(name, optionsorfn)
     let fn
     let a
@@ -49,14 +49,19 @@ module.exports = class Route  extends Base {
     if (!METHODS.includes(name)) throw new Error('method name not allowed: ' + name)
     if (Object.prototype.toString.call(fn) !== '[object Function]') throw new Error('not a function: ' + name)
     this['__'+name] = (req,res) => {return new Promise((resolve) => {
-      console.log('calling',name);
-      fn(req,res);
+      try {
+        fn(req,res)
+      } catch (e) {
+        logger.error(e,name)
+      }
       resolve(true)
       })
     }
+    // ? this['__'+name].bind(this)
     this['_'+name] = {}
     this['_'+name].allowed = a
     this['_'+name].groups = g
+    this.add2Allowed(a)
   }
   get get() {return this.__get}
   set get(options) {
