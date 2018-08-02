@@ -84,6 +84,6 @@ class Logger {
   }
 }
 
-Logger.prototype['dir'] = console.dir
+
 
 module.exports = Logger;
