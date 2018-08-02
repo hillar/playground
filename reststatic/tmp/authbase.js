@@ -9,6 +9,7 @@ const Base = require('./base')
 module.exports = class AuthBase extends Base {
   constructor (logger,directory = USERCACHEDIR,filename = USERCACHEFILENAME) {
     super(logger)
+      this._cachetime = 1000 * 60
       this.filecache = true
       this.cachedir = directory
       this.cachefile = filename
@@ -43,7 +44,7 @@ module.exports = class AuthBase extends Base {
   verify(username,password) {
 
     if (this._users[username]) {
-      const now = new Date()
+      const now = Date.now()
       if (this._users[username].lastVerify + this.cachetime > now) return this._users[username]
     }
     else {
@@ -52,15 +53,15 @@ module.exports = class AuthBase extends Base {
     this.saveCache()
     return this._users[username]
 
-
   }
+
   reallyVerify (username,password) {
     const realname = 'Firstname Lastname'
     const roles = []
     const groups = []
     const email = ''
     const phone = ''
-    const lastVerify = new Date()
+    const lastVerify = Date.now()
     const user = {lastVerify,username,realname, roles,groups, email,phone}
     return user
   }
