@@ -7,6 +7,6 @@
     "tape": "^4.9.1"
   },
   "scripts": {
-    "test": "node_modules/tape/bin/tape src/server/test/*/*.test.js"
+    "test": "node src/server/test/before.js; node_modules/tape/bin/tape src/server/test/*/*.test.js"
   }
 }
