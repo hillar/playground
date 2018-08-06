@@ -19,10 +19,13 @@ module.exports = class AuthBase extends Base {
 
 
   get cachetime () { return this._cachetime }
-  set cachetime (ms) { this._cachetime = ms}
+  set cachetime (ms) {
+    this._cachetime = ms
+  }
   get cachefullname () {if (this.filecache) return this.cachedir + '/' + this.cachefile}
   get cachedir () {return this._cachedir}
   set cachedir (cd) {
+    if (!(Object.prototype.toString.call(cd) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: directory not string  ' + typeof cd)
     if (!fs.existsSync(cd)) {
       this.filecache = false
       this.log_warning({notexists:cd})
@@ -35,7 +38,8 @@ module.exports = class AuthBase extends Base {
   }
   get cachefile () {return this._cachefile}
   set cachefile (cf) {
-    console.log('set cachefile',cf)
+    if (!(Object.prototype.toString.call(cf) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: filename not string  ' + typeof cf)
+
     if (this.filecache) {
       if (fs.existsSync(this._cachedir+'/'+cf)) {
         try {
@@ -57,7 +61,9 @@ module.exports = class AuthBase extends Base {
   }
 
   verify(username,password) {
-    console.log('verify',username,password)
+
+    if (!(Object.prototype.toString.call(username) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: username not string  ' + typeof username)
+    if (!(Object.prototype.toString.call(password) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: password not string  ' + typeof password)
     if (!username) {
       this.log_alert('no username')
       return {}
@@ -80,7 +86,7 @@ module.exports = class AuthBase extends Base {
   }
 
   reallyVerify (username,password) {
-    console.log('real verify',username,password,Object.getPrototypeOf(this).constructor.name)
+    //console.log('real verify',username,password,Object.getPrototypeOf(this).constructor.name)
     if (!(Object.getPrototypeOf(this).constructor.name === 'AuthBase')) throw new Error('not implemented')
     const realname = 'Firstname Lastname'
     const roles = []
@@ -116,6 +122,13 @@ module.exports = class AuthBase extends Base {
         this.log_err(error)
       }
     }
+  }
+  get config () {
+    const conf = {}
+    conf.settings = this.setters
+
+
+    return conf
   }
 
 }

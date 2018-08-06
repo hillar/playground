@@ -28,13 +28,15 @@ module.exports = class Route extends AG {
   }
 
   setMethod (name, fn, roles, groups ) {
-    if (!METHODS.includes(name)) throw new Error('method name not roles: ' + name)
-    if (fn.fn && Object.prototype.toString.call(fn.fn) === '[object Function]') {
+    //console.log('fn',name,Object.prototype.toString.call(fn.fn))
+    if (!METHODS.includes(name)) throw new Error('method name not in METHODS: ' + name)
+
+    if (fn && fn.fn && Object.prototype.toString.call(fn.fn) === '[object Function]') {
       roles = fn.roles
       groups = fn.groups
       fn = fn.fn
     }
-    if (Object.prototype.toString.call(fn) !== '[object Function]') throw new Error('not a function: ' + name)
+    if (Object.prototype.toString.call(fn) !== '[object Function]') throw new Error(name+' not a function: ' + typeof fn)
     // if not set, use current route
     if (!roles) roles = this.roles
     if (!groups) groups = this.groups
@@ -48,11 +50,15 @@ module.exports = class Route extends AG {
             } catch (e) {
               this.log_err(e,name)
             }
+            resolve(true)
           } else {
             this.log_warning('not in groups',{method:name,user})
+            resolve(false)
           }
-        } else this.log_warning('not in role',{method:name,user})
-        resolve(true)
+        } else  {
+          this.log_warning('not in role',{method:name,user})
+          resolve(false)
+        }
       })
     }
   }
@@ -71,22 +77,25 @@ module.exports = class Route extends AG {
 
   get config () {
     const conf = {}
-    conf.settings = this.setters
-    conf.methods = []
+    for (const setting of this.setters){
+      conf[setting] = this[setting]
+    }
+    //conf.methods = {}
     for (const method of this.methods){
       if ( this._methods[method].fn ) {
         const roles = this._methods[method].check.roles
         const groups = this._methods[method].check.groups
         const m = {}
         m[method] = {roles,groups}
-        conf.methods.push(m)
+        //conf.methods.push(m)
+        conf[method] = {roles,groups}
       }
     }
     return conf
   }
 
 }
-
+/*
 process.alias = 'test Route'
 let L = require('../logger')
 let l = new L()
@@ -116,3 +125,5 @@ console.log(r.methods)
 console.log(r.setters)
 console.log(r.roles)
 console.log(JSON.stringify(r.config,null,2))
+
+*/

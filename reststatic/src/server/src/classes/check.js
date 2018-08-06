@@ -26,22 +26,26 @@ module.exports = class Check extends Base {
     this.inlist = () => {return false}
     this.checklist = checklist
   }
-  
+
   get checklist () { return this._checklist}
   set checklist (checklist) {
     let orig = checklist
-    if (!(Array.isArray(checklist) || Object.prototype.toString.call(checklist) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: not string nor array')
+    if (!(Array.isArray(checklist) || Object.prototype.toString.call(checklist) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: not string nor array ' + typeof checklist)
     if (checklist === '*' ) {
-      this.inlist = () => {return true}
+      this.inlist = (memberOf) => {
+        if (!(Array.isArray(memberOf) || Object.prototype.toString.call(memberOf) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: not string nor array ' + typeof memberOf)
+        return true
+      }
       this._checklist = '*'
       return
     }
     if (Object.prototype.toString.call(checklist) === '[object String]') checklist = [checklist]
     if (Array.isArray(checklist)) checklist = zapArray(checklist)
-    else throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: checklist not a string nor array')
+    else throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: checklist not a string nor array'+ typeof checklist)
     if (Array.isArray(checklist) && checklist.length > 0) {
         this._checklist = checklist
         this.inlist = (memberOf) => {
+          if (!(Array.isArray(memberOf) || Object.prototype.toString.call(memberOf) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: not string nor array ' + typeof memberOf)
             if (!Array.isArray(memberOf)) memberOf = [ memberOf ]
             return this._checklist.some( (v)  => {
                 return memberOf.indexOf(v) >= 0
@@ -53,30 +57,3 @@ module.exports = class Check extends Base {
   }
 
 }
-
-/*
-
-process.alias = 'test Check'
-let L = require('../logger')
-let l = new L()
-
-
-const t = 'kala'
-let C = require('./check')
-let c = new C(l,'*')
-c.checklist
-c.inlist(t)
-
-c.checklist = t
-c.checklist
-c.inlist(t)
-
-c = new C(l,t)
-c.checklist
-c.inlist(t)
-
-c = new C(l,[''])
-console.log(c.checklist)
-console.dir(c)
-console.log(c.inlist(t))
-*/
