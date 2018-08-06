@@ -76,10 +76,10 @@ module.exports = class Logger {
     }
     // TODO rfc5424 6.3.  STRUCTURED-DATA
     for (const method of SEVERITYLOG) {
-      this[method.toLowerCase()] = (...msg) => console.log(nowAsJSON(),os.hostname(),'[',process.alias,':',process.pid,']',method.toUpperCase(),':', ...msg)
+      this[method.toLowerCase()] = (ctx,...msg) => console.log(nowAsJSON(),os.hostname(),'[',process.alias,':',process.pid,']',method.toUpperCase(),':', JSON.stringify(ctx),...msg)
     }
     for (const method of SEVERITYERROR) {
-      this[method.toLowerCase()] = (...msg) => console.error(nowAsJSON(),os.hostname(),'[',process.alias,':',process.pid,']',method.toUpperCase(),':', ...msg)
+      this[method.toLowerCase()] = (ctx,...msg) => console.error(nowAsJSON(),os.hostname(),'[',process.alias,':',process.pid,']',method.toUpperCase(),':', JSON.stringify(ctx), ...msg)
     }
   }
 }

@@ -52,7 +52,7 @@ module.exports = class Check extends Base {
             })
         }
     } else {
-      this.log_alert(Object.getPrototypeOf(this).constructor.name + ' empty checklist |' + orig + '|')
+      this.log_alert({'empty checklist': orig })
     }
   }
 

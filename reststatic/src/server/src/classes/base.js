@@ -17,7 +17,11 @@ module.exports = class Base {
     this.logger = logger
     // add logger funcs
     for (const method of LOGMETHODS){
-      this['log_'+method] = (...msgs) => { logger[method](Object.getPrototypeOf(this).constructor.name,...msgs) }
+      this['log_'+method] = (...msgs) => {
+        const ctx = {}
+        ctx[Object.getPrototypeOf(this).constructor.name] = [...msgs]
+        logger[method](ctx)
+      }
     }
   }
 
