@@ -5,7 +5,7 @@ const files = glob.sync('src/server/src/**/*.js')
 
 
 for (const src of files) {
-  const test = src.replace('/src/','/test/').replace('.js','.test.js')
+  const test = src.replace('/src/','/test/').replace('.js','.tape.js')
   if (!fs.existsSync(test)){
     console.error('no test for', src)
     fs.writeFileSync(test,`
@@ -18,6 +18,4 @@ for (const src of files) {
 
     `)
   }
-
-
 }

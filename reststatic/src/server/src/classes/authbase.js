@@ -5,6 +5,7 @@ const USERCACHEFILENAME = 'users.json'
 const USERCACHEDIR = './'
 
 const Base = require('./base')
+const User = require('./user')
 
 module.exports = class AuthBase extends Base {
   constructor (logger,directory = USERCACHEDIR,filename = USERCACHEFILENAME) {
@@ -60,8 +61,8 @@ module.exports = class AuthBase extends Base {
     }
   }
 
-  verify(username,password) {
-    
+  async verify(username,password) {
+
     if (!(Object.prototype.toString.call(username) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: username not string  ' + typeof username)
     if (!(Object.prototype.toString.call(password) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: password not string  ' + typeof password)
 
@@ -79,48 +80,42 @@ module.exports = class AuthBase extends Base {
             if (this._users[username].lastVerify + this.cachetime > now) {
               resolve(this._users[username])
             } else {
-              try {
-                this._users[username] = this.reallyVerify(username,password)
-                this._users[username].lastVerify = Date.now()
-                this.saveCache()
-                resolve(this._users[username])
-              } catch (e) {
-                this.log_err(e)
+              this._users[username] = await this.reallyVerify(username,password)
+              if (this._users[username].uid !== username) {
                 resolve({})
+              } else {
+              this._users[username].lastVerify = Date.now()
+              this.saveCache()
+              resolve(this._users[username])
               }
-
             }
           } else {
-              this._users[username] = await new Promise((resolve) => {
-                try {
-                  this._users[username] = this.reallyVerify(username,password)
+                  this._users[username] = await this.reallyVerify(username,password)
+                  if (this._users[username].uid !== username) {
+                    resolve({})
+                  } else {
                   this._users[username].lastVerify = Date.now()
                   this._users[username].firstVerify = Date.now()
                   this.saveCache()
                   resolve(this._users[username])
-                } catch (e) {
-                  this.log_err(e)
-                  resolve({})
-                }
-              })
+                  }
           }
-          //resolve(this._users[username])
         }
       }
     })
   }
 
-  reallyVerify (username,password) {
+  async reallyVerify (username,password) {
     //console.log('real verify',username,password,Object.getPrototypeOf(this).constructor.name)
     if (!(Object.getPrototypeOf(this).constructor.name === 'AuthBase')) throw new Error('reallyVerify not implemented')
-    const realname = 'Firstname Lastname'
-    const roles = []
-    const groups = []
-    const email = ''
-    const phone = ''
-    const lastVerify = Date.now()
-    const user = {lastVerify,username,realname, roles,groups, email,phone}
-    return user
+    //uid,ssn, fn,ln,ou,manager,emails,phones,roles,groups
+    const user = new User(this._logger,'dummy','1234567','firstname','lastname','org unit','manager','','','','')
+    return new Promise((resolve) => {
+            // Wait a bit
+            setTimeout(() => {
+                resolve(user.toObj())
+            }, 100)
+        })
   }
 
   loadCache () {

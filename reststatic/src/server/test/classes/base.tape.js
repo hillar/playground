@@ -43,5 +43,7 @@ test('base class', function (t) {
 
 
 
+
+
   t.end()
 })

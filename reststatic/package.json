@@ -4,9 +4,11 @@
     "ldapjs": "^1.0.2"
   },
   "devDependencies": {
+    "code": "^5.2.0",
+    "lab": "^15.5.0",
     "tape": "^4.9.1"
   },
   "scripts": {
-    "test": "node src/server/test/before.js; node_modules/tape/bin/tape src/server/test/*/*.test.js"
+    "test": "node src/server/test/before.js; node_modules/tape/bin/tape src/server/test/*/*.tape.js; node_modules/lab/bin/lab src/server/test/*/*.lab.js" 
   }
 }

@@ -1,51 +1,70 @@
 const ldap = require('ldapjs')
 const AuthBase = require('./authbase')
+const User = require('./user')
 
 const SIZELIMIT = 1024
-const PROTO = 'ldaps'
+const PROTO = 'ldap'
 const PORT = 389
 
-function fetch_ldap(url,dn,password,base,filter,attributes,sizeLimit=SIZELIMIT) {
-  const client = ldap.createClient({
-    url: url
-  })
+function fetch_ldap(url,dn,password,base,filter,attributes = [],sizeLimit = SIZELIMIT) {
+  //console.log(url,dn,password,base,filter,attributes,sizeLimit)
   const results = []
   return new Promise((resolve, reject) => {
-    client.bind(dn, password, function (err) {
+    try {
+    const client = ldap.createClient({
+      url: url,
+      tlsOptions: {rejectUnauthorized: false}
+    })
+    client.on('error',function(err){
+         console.log('on',err.message)
+         resolve(err)
+       })
+    client.bind(dn, password, (err)  => {
       if (err) {
-        console.log(err)
+        console.log('bind',err)
         client.unbind()
         reject(err)
       } else {
-        client.search(
-          base, {
+        try {
+          const options = {
             filter: filter,
             scope: 'sub',
             attributes: attributes,
             sizeLimit: sizeLimit
-          },
-          function (err, res) {
-            if (err) {
-              console.log(err)
-              client.unbind()
-              reject(err)
-            } else {
-              res.on('searchEntry', function (entry) {
-                results.push(entry.object)
-              })
-              res.on('error', function (err) {
+          }
+          client.search(base, options,(err, res) => {
+              if (err) {
+                console.log('search',err)
                 client.unbind()
                 reject(err)
-              })
-              res.on('end', function (result) {
-                client.unbind()
-                resolve(results)
-              })
+              } else {
+                res.on('searchEntry', function (entry) {
+                  results.push(entry.object)
+                  //console.log(entry.object)
+                })
+                res.on('error', function (err) {
+                  client.unbind()
+                  reject(err)
+                })
+                res.on('end', function (result) {
+                  client.unbind()
+                  resolve(results)
+                })
+              }
             }
-          }
-        )
+          )
+        } catch (err) {
+          console.log('catch search',err)
+          client.unbind()
+          reject(err)
+        }
       }
     })
+    } catch (e) {
+      console.log('catch client',e)
+      client.unbind()
+      reject(e)
+    }
   })
 }
 
@@ -59,12 +78,15 @@ module.exports = class AuthFreeIPA extends AuthBase {
     this.bindpass = bindpass
     this.field = field
     this.rejectUnauthorized = rejectUnauthorized
+
     // this.bind()
   }
   //for i in server base binduser bindpass user pass field do echo "get $i () { return  this._$i }" done
+  get url () {return  `${PROTO}://${this._server}:${PORT}`}
   get server () { return  this._server }
   get base () { return  this._base }
-  get binduser () { return  this._binduser }
+  get binduser () { return  this._binddn }
+  get binddn () { return  this._binddn }
   get bindpass () { return  this._bindpass }
   get field () { return  this._field }
 
@@ -72,7 +94,7 @@ module.exports = class AuthFreeIPA extends AuthBase {
   set server (server) {
   	if (!(Object.prototype.toString.call(server) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: server not string  ' + typeof server)
   	if (!server) this.log_warning({empty:'server'})
-  	else this._server = `${PROTO}://${server}:${PORT}`
+  	else this._server = server
   }
   set base (base) {
   	if (!(Object.prototype.toString.call(base) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: base not string  ' + typeof base)
@@ -82,7 +104,7 @@ module.exports = class AuthFreeIPA extends AuthBase {
   set binduser (binduser) {
   	if (!(Object.prototype.toString.call(binduser) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: binduser not string  ' + typeof binduser)
   	if (!binduser) this.log_warning({empty:'binduser'})
-  	else this._binduser = binduser
+  	else this._binddn = binduser
   }
   set bindpass (bindpass) {
   	if (!(Object.prototype.toString.call(bindpass) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: bindpass not string  ' + typeof bindpass)
@@ -97,32 +119,96 @@ module.exports = class AuthFreeIPA extends AuthBase {
   }
 
   async reallyVerify (username,password) {
-    const filter = ''
-    const attributes = ''
-    const u = await fetch_ldap(this.server,this.binduser,this.bindpass,this.base,filter,attributes)
-    // exists and not expired ...
-    return {username, ipa:1}
+    //let filter = `(&(${this.field}=${username})(memberof=cn=ipausers,cn=groups,cn=accounts,dc=ipa,dc=c3-lab))`
+    //cn=accounts,dc=ipa,dc=c3-lab
+    let filter = `(&(${this.field}=${username})(memberof=cn=ipausers,cn=groups,${this.base}))`
+    let attributes = 'krbPasswordExpiration'
+    let u
+    try {
+      u = await fetch_ldap(this.url,this.binddn,this.bindpass,this.base,filter,attributes)
+      //u = await fetch_ldap(this.url,this.binddn,this.bindpass,this.base,'uid=hillar',attributes)
+      if (u instanceof Error) {
+        this.log_err({msg:u.message,error:u})
+        return {}
+      }
+    } catch (e) {
+      //console.log('fetch',e)
+      this.log_alert({msg:e.message,error:e})
+      return {}
+    }
+    if (!(u.length === 1)) {
+      this.log_warning({user:'not found ' + username})
+      return {}
+    }
+    u = u[0]
+    // see https://github.com/freeipa/freeipa/blob/master/install/ui/src/freeipa/datetime.js
+    const e = u.krbPasswordExpiration
+    const ed = e.slice(0,4)+'-'+e.slice(4,6)+'-'+e.slice(6,8)+'T'+e.slice(8,10)+':'+e.slice(10,12)+':'+e.slice(12,14)+'Z'
+    const passwordExpiration = new Date(ed)
+    if (!(passwordExpiration instanceof Date) || isNaN(passwordExpiration)) {
+      this.log_alert({user:{username,msg:'krbPasswordExpiration not date',krbPasswordExpiration:e}})
+      return {}
+    }
+    if (passwordExpiration < Date.now()){
+      this.log_notice({user:{username,msg:'password expired',krbPasswordExpiration:e}})
+      return {}
+    }
+    // OK to check password
+    let ru
+    try {
+      ru = await fetch_ldap(this.url,u.dn,password,this.base,filter)
+      //u = await fetch_ldap(this.url,this.binddn,this.bindpass,this.base,'uid=hillar',attributes)
+      if (ru instanceof Error) {
+        this.log_err({user:{username,msg:ru.message,error:ru}})
+        return {}
+      }
+    } catch (e) {
+      if (e.message === 'Invalid Credentials') {
+        this.log_notice({user:{username,msg:e.message,error:e}})
+      } else {
+        this.log_err({user:{username,msg:e.message,error:e}})
+      }
+      return {}
+    }
+    if (!(ru.length === 1)) {
+      this.log_alert({user:'to many' + username, users:ru})
+      return {}
+    }
+    // password ok
+    //copy out groups and roles
+    ru = ru[0]
+    ru.roles = []
+    ru.groups = []
+    for (const memberof of ru.memberOf) {
+      if (memberof.endsWith(this.base)) {
+
+        const tmp = memberof.split(',')
+        const what = tmp[1]
+        switch (tmp[1].split('=')[1]) {
+          case 'roles':
+                        ru.roles.push(tmp[0].split('=')[1])
+                        break
+          case 'groups':
+                        ru.groups.push(tmp[0].split('=')[1])
+                        break
+          default:
+                  this.log_alert({ERROR:{shouldnothappen:tmp}})
+        }
+        //console.log('memberof',tmp)
+      }
+    }
+    delete ru.memberOf
+    //console.log('ru',  ru)
+    const  ou = ru.ou || ''
+    const manager = ru.manager || ''
+    const emails = ru.mail || []
+    const phones = ru.mobile || []
+
+    const fu = new User(this._logger,ru.uid,ru.employeeNumber,ru.givenName,ru.sn,ou,manager,emails,phones,ru.roles,ru.groups)
+    //console.log(fu.toObj())
+
+    return fu.toObj()
   }
 
 
-  /*
-  reallyVerify () {
-
-  }
-  */
 }
-
-/*
-
-process.alias = 'test AuthFreeIPA'
-let L = require('../logger')
-let l = new L()
-
-let AFI = require('./authFreeIPA')
-let afi = new AFI(l)
-//console.log(afi.setters)
-
-a.verify('a','')
-a.verify('','b')
-a.verify('a','b')
-*/

@@ -1,7 +1,7 @@
 
     process.alias = 'test src/server/src/classes/authbase.js'
     test = require('tape')
-    test('src/server/src/classes/authbase.js', function (t) {
+    test('src/server/src/classes/authbase.js', async function (t) {
       let L = require('../../src/classes/logger')
       t.equal(typeof L, 'function')
       let l = new L()
@@ -41,9 +41,21 @@
       bb.cachetime = -1
       t.equal(bb.cachetime,-1)
 
-      //let u = [...Array(10)].map(i=>(~~(Math.random()*36)).toString(36)).join('')
-      //let p = await bb.verify(u,u)
-      //console.log('bb',p)
+      let u = [...Array(10)].map(i=>(~~(Math.random()*36)).toString(36)).join('')
+      /*
+      bb.verify(null,u)
+      .then((p)=>{
+        console.log('***********---------------------')
+        console.log('p',p)
+      })
+      .catch((e)=>{
+        console.log('---------------------')
+        console.error(e)
+      })
+      .finally(()=>{
+        t.end()
+      })
+      */
 
       //t.throws(async () => {await bb.verify(u,u)})
       //bb.reallyVerify = (u,p) => { return {user:u,pass:p}}

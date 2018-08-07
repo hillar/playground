@@ -15,14 +15,6 @@ module.exports = class Base {
 
   constructor (logger) {
     this.logger = logger
-    // add logger funcs
-    for (const method of LOGMETHODS){
-      this['log_'+method] = (...msgs) => {
-        const ctx = {}
-        ctx[Object.getPrototypeOf(this).constructor.name] = [...msgs]
-        logger[method](ctx)
-      }
-    }
   }
 
   // everything has to have logging
@@ -31,6 +23,14 @@ module.exports = class Base {
     if (!logger) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: no logger' )
     for (const method of LOGMETHODS){
       if (!logger[method] || !Object.prototype.toString.call(logger[method]) === '[object Function]') throw new Error(Object.getPrototypeOf(this).constructor.name +' :: logger has no method ' + method)
+    }
+    // add logger funcs
+    for (const method of LOGMETHODS){
+      this['log_'+method] = (...msgs) => {
+        const ctx = {}
+        ctx[Object.getPrototypeOf(this).constructor.name] = [...msgs][0]
+        logger[method](ctx)
+      }
     }
     this._logger = logger
   }
