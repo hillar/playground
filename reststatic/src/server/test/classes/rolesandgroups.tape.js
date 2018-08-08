@@ -15,7 +15,7 @@
       let b = new B(l,'*')
       t.equal(typeof b, 'object')
 
-      t.throws(() => {const y = new B(l)})
+      //t.throws(() => {const y = new B(l)})
       for (const chk of [ 10 ,true,{B}]) {
         t.throws(() => {b.roles = chk})
         t.throws(() => {const y = new B(l,chk)})

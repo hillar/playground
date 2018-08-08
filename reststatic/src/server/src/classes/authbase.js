@@ -67,11 +67,11 @@ module.exports = class AuthBase extends Base {
     if (!(Object.prototype.toString.call(password) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: password not string  ' + typeof password)
 
     return new Promise(async (resolve) => {
-      if (!username) {
+      if (!username.trim()) {
         this.log_alert('no username')
         resolve({})
       } else {
-        if (!password) {
+        if (!password.trim()) {
           this.log_alert({'no password': username})
           resolve({})
         } else {
