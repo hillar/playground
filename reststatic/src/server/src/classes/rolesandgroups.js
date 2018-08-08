@@ -2,7 +2,7 @@ const Base = require('./base')
 const Check = require('./check')
 
 module.exports = class RolesAndGroups extends Base {
-  constructor (logger, roles, groups = '*') {
+  constructor (logger, roles = [], groups = '*') {
     super(logger)
     this._roles =  new Check(logger, roles)
     this._groups =  new Check(logger, groups)

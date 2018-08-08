@@ -144,13 +144,6 @@ module.exports = class AuthBase extends Base {
       }
     }
   }
-  get config () {
-    const conf = {}
-    for (const setting of this.setters){
-      conf[setting] = this[setting]
-    }
-    return conf
-  }
 
 }
 

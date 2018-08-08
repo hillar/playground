@@ -21,9 +21,10 @@ const Base = require('./base')
 
 module.exports = class Check extends Base {
 
-  constructor (logger,checklist) {
+  constructor (logger,checklist ) {
     super(logger)
     this.inlist = () => {return false}
+    this._checklist = null
     this.checklist = checklist
   }
 

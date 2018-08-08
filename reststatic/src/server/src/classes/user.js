@@ -56,37 +56,37 @@ module.exports = class User extends Base {
 
 set  uid (uid) {
 	if (!(Object.prototype.toString.call(uid) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: uid not string  ' + typeof uid)
-	if (!uid) this.log_err({empty:'uid'})
+	if (!uid) this.log_alert({empty:'uid'})
 	else this._uid = uid
 }
 
 set  ssn (ssn) {
 	if (!(Object.prototype.toString.call(ssn) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: ssn not string  ' + typeof ssn)
-	if (!ssn) this.log_err({empty:'ssn'})
+	if (!ssn) this.log_info({uid:this.uid,empty:'ssn'})
 	else this._ssn = ssn
 }
 
 set  fn (fn) {
 	if (!(Object.prototype.toString.call(fn) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: fn not string  ' + typeof fn)
-	if (!fn) this.log_err({empty:'fn'})
+	if (!fn) this.log_err({uid:this.uid,empty:'fn'})
 	else this._fn = fn
 }
 
 set  ln (ln) {
 	if (!(Object.prototype.toString.call(ln) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: ln not string  ' + typeof ln)
-	if (!ln) this.log_err({empty:'ln'})
+	if (!ln) this.log_err({uid:this.uid,empty:'ln'})
 	else this._ln = ln
 }
 
 set  ou (ou) {
 	if (!(Object.prototype.toString.call(ou) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: ou not string  ' + typeof ou)
-	if (!ou) this.log_err({empty:'ou'})
+	if (!ou) this.log_info({uid:this.uid,empty:'ou'})
 	else this._ou = ou
 }
 
 set  manager (manager) {
 	if (!(Object.prototype.toString.call(manager) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: manager not string  ' + typeof manager)
-	if (!manager) this.log_err({empty:'manager'})
+	if (!manager) this.log_info({uid:this.uid,empty:'manager'})
 	else this._manager = manager
 }
 /*
@@ -98,7 +98,7 @@ if (Object.prototype.toString.call(emails) === '[object String]') emails = [emai
 if (Array.isArray(emails)) emails = zapArray(emails)
 else throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: emails not a string nor array'+ typeof emails)
 if (Array.isArray(emails) && emails.length > 0) this._emails = emails
-else this.log_err({empty:'emails'})
+else this.log_notice({uid:this.uid,empty:'emails'})
 
 }
 
@@ -107,7 +107,7 @@ if (Object.prototype.toString.call(phones) === '[object String]') phones = [phon
 if (Array.isArray(phones)) phones = zapArray(phones)
 else throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: phones not a string nor array'+ typeof phones)
 if (Array.isArray(phones) && phones.length > 0) this._phones = phones
-else this.log_err({empty:'phones'})
+else this.log_info({uid:this.uid,empty:'phones'})
 
 }
 
@@ -116,7 +116,7 @@ if (Object.prototype.toString.call(roles) === '[object String]') roles = [roles]
 if (Array.isArray(roles)) roles = zapArray(roles)
 else throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: roles not a string nor array'+ typeof roles)
 if (Array.isArray(roles) && roles.length > 0) this._roles = roles
-else this.log_err({empty:'roles'})
+else this.log_notice({uid:this.uid,empty:'roles'})
 
 }
 
@@ -125,7 +125,7 @@ if (Object.prototype.toString.call(groups) === '[object String]') groups = [grou
 if (Array.isArray(groups)) groups = zapArray(groups)
 else throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: groups not a string nor array'+ typeof groups)
 if (Array.isArray(groups) && groups.length > 0) this._groups = groups
-else this.log_err({empty:'groups'})
+else this.log_err({uid:this.uid,empty:'groups'})
 
 }
 

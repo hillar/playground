@@ -50,5 +50,36 @@ module.exports = class Base {
     }
     return dive(this)
   }
+  get config () {
+    const conf = {}
+    for (const setting of this.setters){
+      conf[setting] = this[setting]
+    }
+    return conf
+  }
+
+   // set config (conf) { <-- RangeError: Maximum call stack size exceeded
+   // re-read the configuration
+   readConfig (conf) {
+    if (conf)  {
+       const settings = this.setters
+       for (const setting of this.setters) {
+         if (conf[setting] && !(this[setting] === conf[setting])){
+           const m = {}
+           m[setting] = {old:this[setting],new:conf[setting]}
+           this.log_notice({readConfig:m})
+           this[setting] = conf[setting]
+         }
+
+       }
+
+    } else {
+      this.log_warning('empty config')
+    }
+  }
+  test () {
+    throw new Error('no test')
+  }
+
 
 }

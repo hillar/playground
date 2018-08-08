@@ -16,12 +16,14 @@ function fetch_ldap(url,dn,password,base,filter,attributes = [],sizeLimit = SIZE
       tlsOptions: {rejectUnauthorized: false}
     })
     client.on('error',function(err){
-         console.log('on',err.message)
+         //console.log('on',err.message)
          resolve(err)
        })
     client.bind(dn, password, (err)  => {
+      //console.log('dn',dn)
+      //console.log('password',password)
       if (err) {
-        console.log('bind',err)
+        //console.log('bind',err)
         client.unbind()
         reject(err)
       } else {
@@ -33,8 +35,9 @@ function fetch_ldap(url,dn,password,base,filter,attributes = [],sizeLimit = SIZE
             sizeLimit: sizeLimit
           }
           client.search(base, options,(err, res) => {
+               //console.log('base',base)
               if (err) {
-                console.log('search',err)
+                //console.log('search',err)
                 client.unbind()
                 reject(err)
               } else {
@@ -54,14 +57,14 @@ function fetch_ldap(url,dn,password,base,filter,attributes = [],sizeLimit = SIZE
             }
           )
         } catch (err) {
-          console.log('catch search',err)
+          //console.log('catch search',err)
           client.unbind()
           reject(err)
         }
       }
     })
     } catch (e) {
-      console.log('catch client',e)
+      //console.log('catch client',e)
       client.unbind()
       reject(e)
     }
@@ -85,8 +88,8 @@ module.exports = class AuthFreeIPA extends AuthBase {
   get url () {return  `${PROTO}://${this._server}:${PORT}`}
   get server () { return  this._server }
   get base () { return  this._base }
-  get binduser () { return  this._binddn }
-  get binddn () { return  this._binddn }
+  get binduser () { return  this._binduser }
+  get binddn () { return  `${this.field}=${this.binduser},cn=users,${this.base}` }
   get bindpass () { return  this._bindpass }
   get field () { return  this._field }
 
@@ -104,7 +107,7 @@ module.exports = class AuthFreeIPA extends AuthBase {
   set binduser (binduser) {
   	if (!(Object.prototype.toString.call(binduser) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: binduser not string  ' + typeof binduser)
   	if (!binduser) this.log_warning({empty:'binduser'})
-  	else this._binddn = binduser
+  	else this._binduser = binduser
   }
   set bindpass (bindpass) {
   	if (!(Object.prototype.toString.call(bindpass) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: bindpass not string  ' + typeof bindpass)
@@ -157,7 +160,6 @@ module.exports = class AuthFreeIPA extends AuthBase {
     let ru
     try {
       ru = await fetch_ldap(this.url,u.dn,password,this.base,filter)
-      //u = await fetch_ldap(this.url,this.binddn,this.bindpass,this.base,'uid=hillar',attributes)
       if (ru instanceof Error) {
         this.log_err({user:{username,msg:ru.message,error:ru}})
         return {}
@@ -199,16 +201,24 @@ module.exports = class AuthFreeIPA extends AuthBase {
     }
     delete ru.memberOf
     //console.log('ru',  ru)
+    const ssn = ru.employeeNumber || ''
     const  ou = ru.ou || ''
     const manager = ru.manager || ''
     const emails = ru.mail || []
     const phones = ru.mobile || []
 
-    const fu = new User(this._logger,ru.uid,ru.employeeNumber,ru.givenName,ru.sn,ou,manager,emails,phones,ru.roles,ru.groups)
+    const fu = new User(this._logger,ru.uid,ssn,ru.givenName,ru.sn,ou,manager,emails,phones,ru.roles,ru.groups)
     //console.log(fu.toObj())
 
     return fu.toObj()
   }
-
+  async test () {
+    this.log_info('test begin ----------------')
+    this.log_info({testing:{server:this.url,bind:{dn:this.binddn}}})
+    const t = await this.verify(this.binduser,this.bindpass)
+    if (t && t.uid && t.uid === this.binduser) this.log_info('test ok')
+    this.log_info('test end ------------------')
+    return t
+  }
 
 }
