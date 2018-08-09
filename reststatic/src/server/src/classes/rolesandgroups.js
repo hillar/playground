@@ -4,8 +4,20 @@ const Check = require('./check')
 module.exports = class RolesAndGroups extends Base {
   constructor (logger, roles = [], groups = '*') {
     super(logger)
-    this._roles =  new Check(logger, roles)
-    this._groups =  new Check(logger, groups)
+    Object.defineProperty(this, '_roles', {
+      enumerable: false,
+      configurable: false,
+      writable: false,
+      value: new Check(logger, roles)
+    })
+    Object.defineProperty(this, '_groups', {
+      enumerable: false,
+      configurable: false,
+      writable: false,
+      value: new Check(logger, groups)
+    })
+    //this._roles =  new Check(logger, roles)
+    //this._groups =  new Check(logger, groups)
   }
 
   get roles () { return this._roles.checklist }

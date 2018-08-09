@@ -40,6 +40,7 @@ module.exports = class Route extends AG {
     // if not set, use current route
     if (!roles) roles = this.roles
     if (!groups) groups = this.groups
+    //console.log('route roles',roles)
     this._methods[name].check = new AG(this.logger, roles, groups)
     this._methods[name].fn = (logger, user, req, res) => {
       return new Promise((resolve) => {

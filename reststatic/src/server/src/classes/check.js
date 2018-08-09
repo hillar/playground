@@ -21,7 +21,7 @@ const Base = require('./base')
 
 module.exports = class Check extends Base {
 
-  constructor (logger,checklist ) {
+  constructor (logger, checklist) {
     super(logger)
     this.inlist = () => {return false}
     this._checklist = null
@@ -31,10 +31,11 @@ module.exports = class Check extends Base {
   get checklist () { return this._checklist}
   set checklist (checklist) {
     let orig = checklist
-    if (!(Array.isArray(checklist) || Object.prototype.toString.call(checklist) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: not string nor array ' + typeof checklist)
+    //console.log('checklist',checklist)
+    if (!(Array.isArray(checklist) || Object.prototype.toString.call(checklist) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' checklist :: not string nor array ' + typeof checklist)
     if (checklist === '*' ) {
       this.inlist = (memberOf) => {
-        if (!(Array.isArray(memberOf) || Object.prototype.toString.call(memberOf) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: not string nor array ' + typeof memberOf)
+        if (!(Array.isArray(memberOf) || Object.prototype.toString.call(memberOf) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' inlist :: not string nor array ' + typeof memberOf)
         return true
       }
       this._checklist = '*'

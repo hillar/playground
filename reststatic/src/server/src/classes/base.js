@@ -24,15 +24,31 @@ module.exports = class Base {
     for (const method of LOGMETHODS){
       if (!logger[method] || !Object.prototype.toString.call(logger[method]) === '[object Function]') throw new Error(Object.getPrototypeOf(this).constructor.name +' :: logger has no method ' + method)
     }
-    // add logger funcs
+    // add logger funcs as non enumerable
     for (const method of LOGMETHODS){
+      Object.defineProperty(this, 'log_' + method, {
+        enumerable: false,
+        configurable: false,
+        writable: false,
+        value: (...msgs) => {
+          const ctx = {}
+          ctx[Object.getPrototypeOf(this).constructor.name] = [...msgs][0]
+          logger[method](ctx)
+        }
+      })/*
       this['log_'+method] = (...msgs) => {
         const ctx = {}
         ctx[Object.getPrototypeOf(this).constructor.name] = [...msgs][0]
         logger[method](ctx)
-      }
+      }*/
     }
-    this._logger = logger
+    //this._logger = logger
+    Object.defineProperty(this, '_logger', {
+      enumerable: false,
+      configurable: false,
+      writable: false,
+      value: logger
+    })
   }
 
   // list of props what can be set

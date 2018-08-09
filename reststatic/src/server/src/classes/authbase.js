@@ -1,3 +1,25 @@
+/*
+const server = http.createServer( async (req, res) => {
+    // parse login and password from headers
+    const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
+    const strauth = new Buffer(b64auth, 'base64').toString()
+    const splitIndex = strauth.indexOf(':')
+    const username = strauth.substring(0, splitIndex)
+    const password = strauth.substring(splitIndex + 1)
+    let user
+    if (username && password ) {
+      user = await auth.verify(username, password)
+    }
+    if (!user || !user.uid){
+      const header = `Basic realm=\"${auth.realm}\"`
+      res.setHeader("WWW-Authenticate", header);
+      res.writeHead(401)
+      res.end()
+      return
+    }
+    ...
+*/
+
 const fs = require('fs')
 const path = require('path')
 
