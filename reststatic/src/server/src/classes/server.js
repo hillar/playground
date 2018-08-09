@@ -38,6 +38,7 @@ const Auth = require('./authfreeipa')
 const auth = new Auth(logger)
 
 // mock
+const none = null
 const justwait = (m,ms=1000) => {
   return new Promise((resolve) => {
             setTimeout(() => {
@@ -45,17 +46,15 @@ const justwait = (m,ms=1000) => {
             }, ms)
         })
       }
-
+//
 const Route = require('./route')
 //simple
-const s = new Route(logger,'*')
+const s = new Route(logger)
 s.get = () => { console.log('-=GET=-') }
 s.post = async () => { console.log('=-POST-='); await justwait({},2); }
 // obj
-let roles = '*'
-let groups = '*'
-
-
+let roles = ['r1','r2']
+let groups = ['GROUP']
 const fn = async (logger,user,req,res) => {
   //console.log(logger,user,req,res)
   console.log('-----')
@@ -66,12 +65,18 @@ const fn = async (logger,user,req,res) => {
   //throw new Error('ba baaa')
   return false
 }
-console.log('FN',Object.prototype.toString.call(fn))
+
 s.delete = {roles, groups, fn}
+// obj + custom test
+s.patch = {roles:[], groups:'canPatch', fn, test:async (u)=>{console.log('custom test',u)}}
 
 
 const Router = require('./router')
-const router = new Router(logger,'*','*',{static: s})
+const router = new Router(logger,'routerRole','routerGroup',{static: s})
+//const router = new Router(logger,'*','*')
+//router.kala = new Route(logger,'b',['a','b'],{get:()=>{return true}})
+
+
 const Server = require('./server')
 const server = new Server(logger,auth,router)
 

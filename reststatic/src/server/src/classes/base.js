@@ -19,12 +19,13 @@ module.exports = class Base {
 
   // everything has to have logging
   get logger () {return this._logger}
+
   set logger (logger) {
     if (!logger) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: no logger' )
     for (const method of LOGMETHODS){
       if (!logger[method] || !Object.prototype.toString.call(logger[method]) === '[object Function]') throw new Error(Object.getPrototypeOf(this).constructor.name +' :: logger has no method ' + method)
     }
-    // add logger funcs as non enumerable
+    // add logger & funcs as non enumerable
     for (const method of LOGMETHODS){
       Object.defineProperty(this, 'log_' + method, {
         enumerable: false,
@@ -35,14 +36,8 @@ module.exports = class Base {
           ctx[Object.getPrototypeOf(this).constructor.name] = [...msgs][0]
           logger[method](ctx)
         }
-      })/*
-      this['log_'+method] = (...msgs) => {
-        const ctx = {}
-        ctx[Object.getPrototypeOf(this).constructor.name] = [...msgs][0]
-        logger[method](ctx)
-      }*/
+      })
     }
-    //this._logger = logger
     Object.defineProperty(this, '_logger', {
       enumerable: false,
       configurable: false,
@@ -66,6 +61,8 @@ module.exports = class Base {
     }
     return dive(this)
   }
+
+  // current values of all setters
   get config () {
     const conf = {}
     for (const setting of this.setters){
@@ -86,13 +83,10 @@ module.exports = class Base {
            this.log_notice({readConfig:m})
            this[setting] = conf[setting]
          }
-
        }
-
-    } else {
-      this.log_warning('empty config')
-    }
+    } 
   }
+
   test () {
     throw new Error('no test')
   }
