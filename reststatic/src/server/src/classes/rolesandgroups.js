@@ -2,7 +2,7 @@ const Base = require('./base')
 const Check = require('./check')
 
 module.exports = class RolesAndGroups extends Base {
-  constructor (logger, roles = [], groups = '*') {
+  constructor (logger, roles, groups ) {
     super(logger)
     Object.defineProperty(this, '_roles', {
       enumerable: false,
@@ -10,6 +10,7 @@ module.exports = class RolesAndGroups extends Base {
       writable: false,
       value: new Check(logger, roles)
     })
+    if (typeof groups === 'undefined') groups = '*'
     Object.defineProperty(this, '_groups', {
       enumerable: false,
       configurable: false,
@@ -25,7 +26,10 @@ module.exports = class RolesAndGroups extends Base {
   isinroles (t) {return this._roles.inlist(t)}
 
   get groups () { return this._groups.checklist }
-  set groups (groups) { this._groups.checklist = groups }
+  set groups (groups) {
+    if (typeof groups === 'undefined') groups = '*'
+    this._groups.checklist = groups
+  }
   isingroups (t) {return this._groups.inlist(t)}
 
   allowed (t) { return (this.isinroles(t) && this.isingroups(t)) }

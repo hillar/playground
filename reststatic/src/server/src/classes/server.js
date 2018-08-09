@@ -21,9 +21,9 @@ module.exports = class Server extends Base {
     router.readConfig(conf.router)
   }
   async test (fn) {
-    const a = await auth.test()
-    const r = await router.test()
-    fn(a && r)
+    const user = await auth.test()
+    const r = await router.test(user)
+    fn(user && r)
 
   }
 
@@ -36,8 +36,42 @@ const Logger = require('./logger')
 const logger = new Logger()
 const Auth = require('./authfreeipa')
 const auth = new Auth(logger)
+
+// mock
+const justwait = (m,ms=1000) => {
+  return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve(Object.keys(m))
+            }, ms)
+        })
+      }
+
+const Route = require('./route')
+//simple
+const s = new Route(logger,'*')
+s.get = () => { console.log('-=GET=-') }
+s.post = async () => { console.log('=-POST-='); await justwait({},2); }
+// obj
+let roles = '*'
+let groups = '*'
+
+
+const fn = async (logger,user,req,res) => {
+  //console.log(logger,user,req,res)
+  console.log('-----')
+  logger.info('start wait')
+  const u = await justwait(user)
+  logger.info('end wait, got ', JSON.stringify(u))
+  console.log('-----')
+  //throw new Error('ba baaa')
+  return false
+}
+console.log('FN',Object.prototype.toString.call(fn))
+s.delete = {roles, groups, fn}
+
+
 const Router = require('./router')
-const router = new Router(logger)
+const router = new Router(logger,'*','*',{static: s})
 const Server = require('./server')
 const server = new Server(logger,auth,router)
 

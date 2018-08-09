@@ -27,11 +27,21 @@ module.exports = class Router extends AG {
     //this._routes = ...routes
 
   }
-  test () {
+  async test (user) {
     this.log_info('test begin ----------------')
-    console.log(Object.keys(this))
+    let result = true
+    for (const route of Object.keys(this)){
+      this.log_info({testing:route})
+      if (this[route].test){
+          const r = await this[route].test(user)
+          if (!r) result = false
+      } else {
+        result = false
+      }
+    }
+
     this.log_info('test end ------------------')
-    return true
+    return result
 
   }
 }

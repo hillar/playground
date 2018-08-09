@@ -27,31 +27,53 @@ module.exports = class Route extends AG {
     return _methods
   }
 
-  setMethod (name, fn, roles, groups ) {
+  setMethod (name, fn, roles, groups, test ) {
     //console.log('fn',name,Object.prototype.toString.call(fn.fn))
-    if (!METHODS.includes(name)) throw new Error('method name not in METHODS: ' + name)
-
-    if (fn && fn.fn && Object.prototype.toString.call(fn.fn) === '[object Function]') {
+    let kind
+    console.log('FN.FN',Object.prototype.toString.call(fn.fn))
+    // [object AsyncFunction] or [object Function]
+    if (fn && fn.fn && (Object.prototype.toString.call(fn.fn) === '[object Function]' || Object.prototype.toString.call(fn.fn) === '[object AsyncFunction]')) {
       roles = fn.roles
       groups = fn.groups
+      test = fn.test
+      kind = Object.prototype.toString.call(fn.fn)
       fn = fn.fn
+    } else {
+        if (fn.fn) throw new Error(name+' not a boject with fn function: ' + Object.prototype.toString.call(fn.fn))
+        if (fn && (Object.prototype.toString.call(fn) === '[object Function]' || Object.prototype.toString.call(fn) === '[object AsyncFunction]')) {
+          kind = Object.prototype.toString.call(fn)
+        } else throw new Error(name + ' not a function: ' + Object.prototype.toString.call(fn))
+
     }
-    if (Object.prototype.toString.call(fn) !== '[object Function]') throw new Error(name+' not a function: ' + typeof fn)
     // if not set, use current route
     if (!roles) roles = this.roles
     if (!groups) groups = this.groups
     //console.log('route roles',roles)
     this._methods[name].check = new AG(this.logger, roles, groups)
     this._methods[name].fn = (logger, user, req, res) => {
-      return new Promise((resolve) => {
+      return new Promise(async (resolve) => {
         if (this._methods[name].check.isinroles(user.roles)) {
           if (this._methods[name].check.isingroups(user.groups)) {
-            try {
-              fn(this.logger,user,req,res)
-            } catch (e) {
-              this.log_err(e,name)
+            let mr
+            if (kind === '[object Function]') {
+              mr = await new Promise((resolve) => {
+                try {
+                  const fr = fn(this.logger,user,req,res)
+                  resolve(fr)
+                } catch (e) {
+                  this.log_err(e,name)
+                  resolve(false)
+                }
+              })
+            } else {
+              try {
+                mr = await fn(this.logger,user,req,res)
+              } catch (e) {
+                mr = false
+                this.log_err(e,name)
+              }
             }
-            resolve(true)
+            resolve(mr)
           } else {
             this.log_warning('not in groups',{method:name,user})
             resolve(false)
@@ -93,6 +115,25 @@ module.exports = class Route extends AG {
       }
     }
     return conf
+  }
+
+  async test (user) {
+    let result = true
+    if (!this.methods || !this.methods.length > 0 ) {
+      this.log_err('no methods')
+      return false
+    }
+    for (const method of this.methods){
+      this.log_info({'testing':method})
+      if ( this._methods[method].test ) {
+          this.log_info({'custom test':method})
+      } else {
+        this.log_info({'default test':method})
+        const r = await this[method](this._logger,user,{},{})
+        console.log('method result',method,r)
+      }
+    }
+    return result
   }
 
 }
