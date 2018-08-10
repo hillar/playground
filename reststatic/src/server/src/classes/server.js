@@ -76,7 +76,7 @@ const StaticRoute = require('./staticroute')
 
 const Router = require('./router')
 const router = new Router(logger,'routerRole','routerGroup',{
-  src: new StaticRoute(logger,'*','*','./','src')
+  src: new StaticRoute(logger,'*','*','./','/')
 })
 //const router = new Router(logger,'*','*')
 //router.kala = new Route(logger,'b',['a','b'],{get:()=>{return true}})
@@ -99,8 +99,8 @@ const config = require(configFile)
 server.readConfig(config)
 // test server
 if ((args.length === 1) && args[0].includes('ping')) {
-    server.ping((ok)=>{
-      server.log_info({ok})
+    server.ping((ok) => {
+      server.log_info({ping:ok})
       process.exit(0)
     })
 }

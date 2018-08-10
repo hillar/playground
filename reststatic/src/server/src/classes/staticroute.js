@@ -67,8 +67,11 @@ module.exports = class StaticRoute extends Route {
 
   set root (root) {
     if (!(Object.prototype.toString.call(root) === '[object String]')) throw new Error('root not a string ' + typeof root)
+    if (root === '/') throw new Error('can not serve /')
+    if (!root) throw new Error('can not serve empty')
     try {
       this._root = fs.realpathSync(root)
+      if (this._root === '/') throw new Error('can not serve /')
     } catch (err) {
       this._root = root
       this.log_warning({notexists:root})
@@ -77,6 +80,7 @@ module.exports = class StaticRoute extends Route {
 
   set route (route) {
     if (!(Object.prototype.toString.call(route) === '[object String]')) throw new Error('root not a string ' + typeof route)
+    if (!route) throw new Error('can not route empty')
     this._route = route
   }
 

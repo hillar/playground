@@ -5,6 +5,11 @@
       let L = require('../../src/classes/logger')
       let l = new L()
       let B = require('../../src/classes/staticroute')
+      t.throws(()=>{const a = new B(l,null,null,1)})
+      t.throws(()=>{const a = new B(l,null,null,'./',1)})
+      t.throws(()=>{const a = new B(l,null,null,'./','')})
+      t.throws(()=>{const a = new B(l,null,null,'/','abc')})
+      t.throws(()=>{const a = new B(l,null,null,'','abc')})
       let b
       b = new B(l)
       t.deepEqual(b.methods,[ 'get' ])
