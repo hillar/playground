@@ -60,13 +60,13 @@ module.exports = class Router extends AG {
     return perm
   }
   */
-  async test (user) {
-    this.log_info('test begin ----------------')
+  async ping (user) {
+    this.log_info('pinging all routes')
     let result = true
     for (const route of this.routes){
-      this.log_info({testing:route})
-      if (this[route].test){
-          const r = await this[route].test(user,route)
+      this.log_info({ping:route})
+      if (this[route].ping){
+          const r = await this[route].ping(user,route)
           if (!r) result = false
       } else {
         this.log_alert('not a route ' + route)
@@ -74,8 +74,6 @@ module.exports = class Router extends AG {
         result = false
       }
     }
-
-    this.log_info('test end ------------------')
     return result
 
   }

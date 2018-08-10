@@ -20,9 +20,10 @@ module.exports = class Server extends Base {
     auth.readConfig(conf.auth)
     router.readConfig(conf.router)
   }
-  async test (fn) {
-    const user = await auth.test()
-    const r = await router.test(user)
+  async ping (fn) {
+    this.log_info({ping:'---------------------------------------'})
+    const user = await auth.ping()
+    const r = await router.ping(user)
     fn(user && r)
 
   }
@@ -71,8 +72,12 @@ s.delete = {roles, groups, fn}
 s.patch = {roles:[], groups:'canPatch', fn, test:async (u)=>{console.log('custom test',u)}}
 
 
+const StaticRoute = require('./staticroute')
+
 const Router = require('./router')
-const router = new Router(logger,'routerRole','routerGroup',{static: s})
+const router = new Router(logger,'routerRole','routerGroup',{
+  src: new StaticRoute(logger,'*','*','./','src')
+})
 //const router = new Router(logger,'*','*')
 //router.kala = new Route(logger,'b',['a','b'],{get:()=>{return true}})
 
@@ -93,8 +98,8 @@ if ((args.length === 1) && args[0].includes('config')) {
 const config = require(configFile)
 server.readConfig(config)
 // test server
-if ((args.length === 1) && args[0].includes('test')) {
-    server.test((ok)=>{
+if ((args.length === 1) && args[0].includes('ping')) {
+    server.ping((ok)=>{
       server.log_info({ok})
       process.exit(0)
     })

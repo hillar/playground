@@ -212,12 +212,15 @@ module.exports = class AuthFreeIPA extends AuthBase {
 
     return fu.toObj()
   }
-  async test () {
-    this.log_info('test begin ----------------')
-    this.log_info({testing:{server:this.url,bind:{dn:this.binddn}}})
+  async ping () {
+
+    //this.log_info({bind:{server:this.url,bind:{dn:this.binddn}}})
     const user = await this.verify(this.binduser,this.bindpass)
-    if (user && user.uid && user.uid === this.binduser) this.log_info('test ok')
-    this.log_info('test end ------------------')
+    if (user && user.uid && user.uid === this.binduser) {
+      this.log_info({ping:'ok', server:this.url,bind:{dn:this.binddn}})
+    } else {
+      this.log_info({ping:'failed', server:this.url,bind:{dn:this.binddn}})
+    }
     return user
   }
 

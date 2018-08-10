@@ -84,11 +84,11 @@ module.exports = class Base {
            this[setting] = conf[setting]
          }
        }
-    } 
+    }
   }
 
-  test () {
-    throw new Error('no test')
+  ping () {
+    throw new Error('no ping')
   }
 
 

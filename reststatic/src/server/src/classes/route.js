@@ -32,17 +32,17 @@ module.exports = class Route extends RolesAndGroups {
     return _methods
   }
 
-  setMethod (name, fn, roles, groups, test ) {
+  setMethod (name, fn, roles, groups, ping ) {
     if (!METHODS.includes(name)) throw new Error('method name not allowed: ' + name)
     let kind
     // [object AsyncFunction] or [object Function]
     if (fn && fn.fn && (Object.prototype.toString.call(fn.fn) === '[object Function]' || Object.prototype.toString.call(fn.fn) === '[object AsyncFunction]')) {
       roles = fn.roles
       groups = fn.groups
-      if (fn.test) {
-        if (!(Object.prototype.toString.call(fn.test) === '[object AsyncFunction]')) throw new Error(name+' custom test function not async: ' + Object.prototype.toString.call(fn.test))
+      if (fn.ping) {
+        if (!(Object.prototype.toString.call(fn.ping) === '[object AsyncFunction]')) throw new Error(name+' custom ping function not async: ' + Object.prototype.toString.call(fn.ping))
       }
-      test = fn.test
+      ping = fn.ping
       kind = Object.prototype.toString.call(fn.fn)
       fn = fn.fn
     } else {
@@ -50,8 +50,8 @@ module.exports = class Route extends RolesAndGroups {
         if (fn && (Object.prototype.toString.call(fn) === '[object Function]' || Object.prototype.toString.call(fn) === '[object AsyncFunction]')) {
           kind = Object.prototype.toString.call(fn)
         } else throw new Error(name + ' not a function: ' + Object.prototype.toString.call(fn))
-        if (test) {
-          if (!(Object.prototype.toString.call(fn) === '[object AsyncFunction]')) throw new Error(name+' custom test function not async: ' + Object.prototype.toString.call(test))
+        if (ping) {
+          if (!(Object.prototype.toString.call(ping) === '[object AsyncFunction]')) throw new Error(name+' custom ping function not async: ' + Object.prototype.toString.call(ping))
         }
     }
     this._methods[name] = {}
@@ -87,8 +87,8 @@ module.exports = class Route extends RolesAndGroups {
         }
       })
     }
-    if (test) {
-      this._methods[name].test = test
+    if (ping) {
+      this._methods[name].ping = ping
     }
 
   }
@@ -130,7 +130,7 @@ module.exports = class Route extends RolesAndGroups {
     }
   }
 
-  async test (user,route) {
+  async ping (user,route) {
     let result = true
     if (!this.methods || !this.methods.length > 0 ) {
       this.log_err('no methods ' + route)
@@ -138,20 +138,27 @@ module.exports = class Route extends RolesAndGroups {
       return false
     }
     for (const method of this.methods){
-      this.log_info({'test start':{route,method}})
-      if ( this._methods[method].test ) {
-          this.log_notice({'test custom':{route,method}})
-          const r = await this._methods[method].test(user)
-          if (!r) result = false
+      if ( this._methods[method].ping ) {
+          //this.log_notice({'custom ping start':{route,method}})
+          const r = await this._methods[method].ping(user)
+          if (!r) {
+            result = false
+            this.log_err({ping:'failed',route,method})
+          } else {
+            this.log_info({ping:'ok',route,method})
+          }
       } else {
-        //this.log_info({default:{route,method}})
+        //this.log_notice({'ping default start':{route,method}})
         const req = new http.IncomingMessage()
         const res = {} //new http.ServerResponse()
         const r = await this[method](this._logger,user,req,res)
-        if (!r) result = false
-        //console.log('method result',method,r)
+        if (!r) {
+          result = false
+          this.log_err({ping:'failed',note:'default',route,method})
+        } else {
+          this.info({ping:'ok',note:'default',route,method})
+        }
       }
-      this.log_info({'test end':{route,method}})
     }
     return result
   }

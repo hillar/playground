@@ -17,7 +17,7 @@ const METHODS = [
       t.throws(()=>{b = new B(l,null,null,{get:null})})
       b = new B(l)
       t.throws(()=>{b.setMethod()})
-      for (const m of METHODS) t.throws(()=>{b[m] = {fn:()=>{},test:{}}})
+      for (const m of METHODS) t.throws(()=>{b[m] = {fn:()=>{},ping:{}}})
       for (const m of METHODS) t.doesNotThrow(()=>{b[m] = {fn:()=>{},roles:'a',groups:'b'}})
       t.deepEqual(b.methods,[ 'get', 'post', 'put', 'patch', 'delete' ])
       t.deepEqual(b.config,{ roles: undefined, groups: undefined, get: { roles: 'a', groups: 'b' }, post: { roles: 'a', groups: 'b' }, put: { roles: 'a', groups: 'b' }, patch: { roles: 'a', groups: 'b' }, delete: { roles: 'a', groups: 'b' } })
