@@ -6,14 +6,14 @@ const SIZELIMIT = 1024
 const PROTO = 'ldap'
 const PORT = 389
 
-function fetch_ldap(url,dn,password,base,filter,attributes = [],sizeLimit = SIZELIMIT) {
+function fetch_ldap(url,dn,password,base,filter,attributes = [],sizeLimit = SIZELIMIT,rejectUnauthorized) {
   //console.log(url,dn,password,base,filter,attributes,sizeLimit)
   const results = []
   return new Promise((resolve, reject) => {
     try {
     const client = ldap.createClient({
       url: url,
-      tlsOptions: {rejectUnauthorized: false}
+      tlsOptions: {rejectUnauthorized: rejectUnauthorized}
     })
     client.on('error',function(err){
          //console.log('on',err.message)
@@ -72,10 +72,12 @@ function fetch_ldap(url,dn,password,base,filter,attributes = [],sizeLimit = SIZE
 }
 
 module.exports = class AuthFreeIPA extends AuthBase {
-  constructor (logger,directory,filename,server='localhost',base='cn=accounts,dc=example,dc=org',binduser='bu',bindpass='bp',field='uid',rejectUnauthorized=true) {
+  constructor (logger,directory,filename,server='localhost',base='cn=accounts,dc=example,dc=org',binduser='user',bindpass='password',field='uid',rejectUnauthorized=false) {
     super(logger,directory,filename)
     //for i in server base binduser bindpass user pass field do echo "this._$i = $i" done
     this.server = server
+    this.proto = PROTO
+    this.port = PORT
     this.base = base
     this.binduser = binduser
     this.bindpass = bindpass
@@ -89,9 +91,21 @@ module.exports = class AuthFreeIPA extends AuthBase {
   get server () { return  this._server }
   get base () { return  this._base }
   get binduser () { return  this._binduser }
+  // TODO check FREEIPA & AD doc's for cn=users
   get binddn () { return  `${this.field}=${this.binduser},cn=users,${this.base}` }
   get bindpass () { return  this._bindpass }
   get field () { return  this._field }
+
+  set proto (proto) {
+    if (!(Object.prototype.toString.call(proto) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: proto not string  ' + typeof proto)
+    this._proto = proto
+  }
+  set port (port) {
+    if (isNaN(port)) throw new Error(Object.getPrototypeOf(this).constructor.name + 'port not a number')
+    this._port = port
+  }
+  get proto () {return this._proto}
+  get port () {return this._port}
 
   //for i in server base binduser bindpass user pass field do echo -en "set $i ($i) { \n\tif (\!(Object.prototype.toString.call($i) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: $i not string  ' + typeof $i)\n\tif (\!$i) this.log_warning({empty:'$i'})\n\telse this._$i = $i \n}\n" done | sed 's/\\//'
   set server (server) {

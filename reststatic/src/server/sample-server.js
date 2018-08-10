@@ -1,82 +1,29 @@
-
-const restatic = require('./restatic')
-
 const Logger = require('./logger')
 const logger = new Logger()
+const Auth = require('./authfreeipa')
+const auth = new Auth(logger)
+const StaticRoute = require('./staticroute')
+const Router = require('./router')
+const router = new Router(logger,'routerRole','routerGroup',{
+  files: new StaticRoute(logger,'*','*','./static','files')
+})
+const  configFile = './config.js'
+const config = require(configFile)
+const Server = require('./server')
+const server = new Server(logger,auth,router,config)
 
-const Route = require('./route')
-const rest = {}
-
-rest.kala = new Route(logger,'*')
-rest.kala.get = (req,res) => {
-  console.log('kala!!!!');
-  res.write('kala')
-  res.write('   maja')
+const args = process.argv.slice(2)
+// print out sample consfig
+if ((args.length === 1) && args[0].includes('config')) {
+  console.log('/* sample config */\nmodule.exports = ',JSON.stringify(server.config,null,4))
+  process.exit(0)
 }
-
-rest.user = new Route(logger,'*')
-//rest.maja.allowed = 'admins'
-const allowed = ['guest']
-const groups = 'c3'
-const fn = (req,res) => {
-  console.log(req.user);
-  res.write(JSON.stringify(req.user))
-}
-rest.user.get  = {allowed, groups, fn}
-
-rest.kala3 = new Route(logger,['a','b','c'],'1234')
-rest.kala3.post = () => {}
-rest.kala3.delete = () => {}
-
-
-const config = require('./config')
-config.portListen = 4444
-config.ipListen = '0.0.0.0'
-
-/*
-const auth = new FreeIPA()
-const rest = {}
-rest.conctact = new Contact
-*/
-const main = async () => {
-  // get conf
-  // check conf items
-  // await depes
-  //
-  let server
-  try {
-    server = await restatic.createServer({
-      //auth: {func:function(u,p){ console.log('auth',u,p);return true; }},
-      logger: logger, //new Logger(),
-      //static: {root:'./',route:'static'},
-      rest: rest,
-      generateSampleConfig: false
+// ping endpoints
+if ((args.length === 1) && args[0].includes('ping')) {
+    server.ping((ok) => {
+      server.log_info({ping:ok})
+      process.exit(0)
     })
-  } catch (e) {
-    logger.emerg(e)
-  }
-  if (server) {
-    server.listen(config.portListen, config.ipListen)
-  } else {
-    logger.emerg('no restatic')
-    process.exit(1)
-  }
-/*
-  process.on('uncaughtException', (error) => {
-      console.error({'uncaughtException':`${error}`})
-  })
-  */
 }
 
-
-logger.debug('starting ..')
-if (process.argv.length > 2) {
-  let tmp = 'params: '
-  for(var index=2; index < process.argv.length; index++ ){
-    tmp += ` ${process.argv[ index ]}`
-  }
-  logger.info(tmp)
-}
-main()
-  .then(() => logger.info('STARTED'))
-  .catch((err) => {logger.emerg(err)})
+server.listen()

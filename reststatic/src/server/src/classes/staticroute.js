@@ -21,18 +21,24 @@ module.exports = class StaticRoute extends Route {
     this.route = route
 
     const getstaticfiles = (logger, user, req, res) => {
-      const patheles = path.parse(decodeURIComponent(req.url))
-      const filename = path.join(this.path,decodeURIComponent(req.url))
-      fs.readFile(filename, (err,content) => {
-        if (err) {
-          logger.warning({'staticfiles':{user:user.uid,remoteip:ip(req),notexists:filename}})
-          res.writeHead(404)
-        } else {
-          logger.notice({'staticfiles':{user:user.uid,remoteip:ip(req),access:filename}})
-          res.write(content)
-        }
+      return new Promise( (resolve) => {
+        let pe = path.parse(decodeURIComponent(req.url))
+        pe.dir = pe.dir.replace('/'+route,'')
+        const filename = path.join(this.path, pe.dir, pe.base)
+        fs.readFile(filename, (err,content) => {
+          if (err) {
+            logger.warning({'staticfiles':{user:user.uid,remoteip:ip(req),notexists:filename}})
+            res.writeHead(404)
+            res.end()
+            resolve(false)
+          } else {
+            logger.notice({'staticfiles':{user:user.uid,remoteip:ip(req),access:filename}})
+            res.write(content)
+            res.end()
+            resolve(true)
+          }
+        })
       })
-      res.end()
     }
 
     const ping = async (u) => {
@@ -58,7 +64,7 @@ module.exports = class StaticRoute extends Route {
   get route () { return this._route}
   get path () {
     if (this.root && this.route) {
-      return path.join(this.root,this.route)
+      return path.join(this.root)
     } else {
       if (!this.root) throw new Error('no root directory')
       if (!this.route) throw new Error('no route')
