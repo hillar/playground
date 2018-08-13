@@ -15,9 +15,9 @@
       t.throws(() => {const y = new B(l,'./',1)})
       let b = new B(l)
       t.equal(typeof b, 'object')
-      t.deepEqual(b.setters, [ 'server', 'base', 'binduser', 'bindpass', 'field', 'cachetime', 'cachedir', 'cachefile' ])
+      t.deepEqual(b.setters, [ 'server', 'base', 'binduser', 'bindpass', 'field', 'proto', 'port', 'cachetime', 'cachedir', 'cachefile' ])
 
-      t.deepEqual(b.config,{ server: 'localhost', base: 'cn=accounts,dc=example,dc=org', binduser: 'bu', bindpass: 'bp', field: 'uid', cachetime: 60000, cachedir: './', cachefile: 'users.json' })
+      t.deepEqual(b.config,{ server: 'localhost', base: 'cn=accounts,dc=example,dc=org', binduser: 'user', bindpass: 'password', field: 'uid', proto: 'ldap', port: 389, cachetime: 60000, cachedir: './', cachefile: 'users.json' })
 
 
       t.end()

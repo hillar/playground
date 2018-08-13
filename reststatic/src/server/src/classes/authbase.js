@@ -112,10 +112,16 @@ module.exports = class AuthBase extends Base {
               }
             }
           } else {
-                  this._users[username] = await this.reallyVerify(username,password)
-                  if (this._users[username].uid !== username) {
+
+                  const user  = await this.reallyVerify(username,password)
+                  if (user instanceof Error) {
+                    resolve(user)
+                    return
+                  }
+                  if (user.uid !== username) {
                     resolve({})
                   } else {
+                  this._users[username] = user
                   this._users[username].lastVerify = Date.now()
                   this._users[username].firstVerify = Date.now()
                   this.saveCache()

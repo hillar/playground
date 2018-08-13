@@ -15,7 +15,7 @@
       t.deepEqual(b.methods,[ 'get' ])
       b.root = './sadas'
       b.route = 'kala'
-      t.deepEqual(b.path,'sadas/kala')
+      t.deepEqual(b.path,'sadas')
       b.groups = 'g'
       b.roles = 'r'
       t.deepEqual(b.config,{ root: './sadas', route: 'kala', roles: 'r', groups: 'g', get: { roles: undefined, groups: undefined } })

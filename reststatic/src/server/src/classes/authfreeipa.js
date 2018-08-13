@@ -145,17 +145,17 @@ module.exports = class AuthFreeIPA extends AuthBase {
       u = await fetch_ldap(this.url,this.binddn,this.bindpass,this.base,filter,attributes)
       //u = await fetch_ldap(this.url,this.binddn,this.bindpass,this.base,'uid=hillar',attributes)
       if (u instanceof Error) {
-        this.log_err({msg:u.message,error:u})
-        return {}
+        this.log_err({ERROR:u.message,raw:u})
+        return u
       }
     } catch (e) {
       //console.log('fetch',e)
       this.log_alert({msg:e.message,error:e})
-      return {}
+      return e
     }
     if (!(u.length === 1)) {
       this.log_warning({user:'not found ' + username})
-      return {}
+      return new Error('not found' + username)
     }
     u = u[0]
     // see https://github.com/freeipa/freeipa/blob/master/install/ui/src/freeipa/datetime.js
@@ -176,7 +176,7 @@ module.exports = class AuthFreeIPA extends AuthBase {
       ru = await fetch_ldap(this.url,u.dn,password,this.base,filter)
       if (ru instanceof Error) {
         this.log_err({user:{username,msg:ru.message,error:ru}})
-        return {}
+        return ru
       }
     } catch (e) {
       if (e.message === 'Invalid Credentials') {
@@ -184,11 +184,11 @@ module.exports = class AuthFreeIPA extends AuthBase {
       } else {
         this.log_err({user:{username,msg:e.message,error:e}})
       }
-      return {}
+      return e
     }
     if (!(ru.length === 1)) {
       this.log_alert({user:'to many' + username, users:ru})
-      return {}
+      return new Error('to many ' + username)
     }
     // password ok
     //copy out groups and roles
@@ -226,6 +226,7 @@ module.exports = class AuthFreeIPA extends AuthBase {
 
     return fu.toObj()
   }
+
   async ping () {
 
     //this.log_info({bind:{server:this.url,bind:{dn:this.binddn}}})

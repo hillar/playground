@@ -14,7 +14,69 @@ module.exports = class Server extends Base {
     else throw new Error('no router')
     this.port = PORT
     this.ip = IP
-    this.readConfig(config)
+    const cliParams = require('commander')
+    cliParams
+      .version('0.0.1')
+      .usage('[options]')
+      .option('--ping','ping backends')
+      .option('-t, --test-config','test configuration')
+      .option('-T, --dump-config','dump configuration')
+      .option('-c, --config [file]', 'set configuration file','./config.js')
+      for (const param of this.setters) {
+        cliParams.option('--'+param+ ' ['+typeof this[param]+']','server '+param+ ' (default: '+this[param]+')')
+      }
+      for (const param of this.auth.setters) {
+        cliParams.option('--auth-'+param + ' ['+typeof this.auth[param]+']','auth '+param+ ' (default: '+this.auth[param]+')')
+      }
+      for (const route of this.router.routes){
+        for (const param of this.router[route].setters) {
+          cliParams.option('--'+route+'-'+param + ' ['+typeof this.router[route][param]+']', route+' '+param+ ' (default: '+this.router[route][param]+')')
+        }
+      }
+      cliParams.parse(process.argv);
+
+    const configFile = cliParams.config || './config.js'
+    let conf = {}
+    // load config file
+    try {
+      conf = require(configFile)
+    } catch (err) {
+      this.log_err('can not load ' + configFile)
+    }
+    console.log('from file',conf)
+    // patch conf with command line params
+    for (const param of this.setters) {
+      if (!!cliParams[param] && cliParams[param] != conf[param]) conf[param] = cliParams[param]
+    }
+    if (!conf.auth) conf.auth = {}
+    for (const param of this.auth.setters) {
+      const cParam = 'auth'+param.charAt(0).toUpperCase() + param.slice(1)
+      if (!!cliParams[cParam] && cliParams[cParam] != conf.auth[param]) conf.auth[param] = cliParams[cParam]
+    }
+    if (!conf.router) conf.router = {}
+    for (const route of this.router.routes){
+      if (!conf.router[route]) conf.router[route] = {}
+      for (const param of this.router[route].setters) {
+        const cParam = route+param.charAt(0).toUpperCase() + param.slice(1)
+        if (cliParams[cParam] != conf.router[route][param]) conf.router[route][param] = cliParams[cParam]
+      }
+    }
+
+    // conf ready
+    console.log('pathceds',conf)
+    this.readConfig(conf)
+
+    if (cliParams.dumpConfig) {
+      console.log('/* sample config */\nmodule.exports = ',JSON.stringify(this.config,null,4))
+      process.exit(0)
+    }
+    // ping endpoints
+    if (cliParams.ping) {
+        this.ping((ok) => {
+          this.log_info({ping:ok})
+          process.exit(0)
+        })
+    }
 
     this._server = http.createServer( async (req, res) => {
       let user
@@ -25,6 +87,11 @@ module.exports = class Server extends Base {
       const password = strauth.substring(splitIndex + 1)
       if (username && password ) {
         user = await this.auth.verify(username, password)
+      }
+      if (user instanceof Error) {
+        res.writeHead(503)
+        res.end()
+        return
       }
       if (!user){
         if (username) logger.info({reauth:username})
@@ -117,22 +184,23 @@ module.exports = class Server extends Base {
     const conf = {}
     conf.port = this.port
     conf.ip = this.ip
-    conf.auth = auth.config
-    conf.router = router.config
+    conf.auth = this.auth.config
+    conf.router = this.router.config
     return conf
   }
 
   readConfig (conf) {
+    super.readConfig(conf)
     if (conf) {
-      auth.readConfig(conf.auth)
-      router.readConfig(conf.router)
+      if (conf.auth) this.auth.readConfig(conf.auth)
+      if (conf.router) this.router.readConfig(conf.router)
     }
   }
 
   async ping (fn) {
     this.log_info({ping:'---------------------------------------'})
-    const user = await auth.ping()
-    const r = await router.ping(user)
+    const user = await this.auth.ping()
+    const r = await this.router.ping(user)
     fn(user && r)
   }
 
@@ -140,6 +208,7 @@ module.exports = class Server extends Base {
 
 
 // -----------------------------
+/*
 process.alias = 'test server'
 
 const Logger = require('./logger')
@@ -201,7 +270,7 @@ const server = new Server(logger,auth,router)
 const args = process.argv.slice(2)
 // print out sample consfig
 if ((args.length === 1) && args[0].includes('config')) {
-  console.log('/* sample config */\nmodule.exports = ',JSON.stringify(server.config,null,4))
+  console.log('\nmodule.exports = ',JSON.stringify(server.config,null,4))
   process.exit(0)
 }
 // TODO config
@@ -216,3 +285,4 @@ if ((args.length === 1) && args[0].includes('ping')) {
     })
 }
 server.listen()
+*/
