@@ -6,11 +6,11 @@ const auth = new Auth(logger)
 
 const StaticRoute = require('./src/classes/staticroute')
 const Router = require('./src/classes/router')
-const router = new Router(logger,null,undefined,{
-  '/': new StaticRoute(logger,'*','*','./src/classes/static')
+const router = new Router(logger,null,null,{
+  'files': new StaticRoute(logger,null,undefined,'./src/classes/static')
 })
 
 const Server = require('./src/classes/server')
-const server = new Server(logger, auth, router)
+const server = new Server(logger, 'null','null', auth, router)
 
 server.listen()

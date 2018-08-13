@@ -15,7 +15,6 @@ const STATICROUTE = 'static'
 module.exports = class StaticRoute extends Route {
 
   constructor (logger, roles, groups, root = STATICROOT, route = STATICROUTE) {
-
     super(logger, roles, groups)
     this.root = root
     this.route = route

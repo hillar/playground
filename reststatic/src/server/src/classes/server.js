@@ -1,13 +1,14 @@
-const Base = require('./base')
+//const Base = require('./base')
 const http = require('http')
 const {ip} = require('./requtils')
-
+const AG = require('./rolesandgroups')
 const PORT = 4444
 const IP = '127.0.0.1'
 
-module.exports = class Server extends Base {
-  constructor (logger, auth, router, config) {
-    super(logger)
+
+module.exports = class Server extends AG {
+  constructor (logger, roles, groups, auth, router, config) {
+    super(logger, roles, groups)
     if (auth && auth.config && Object.prototype.toString.call(auth.verify) === '[object AsyncFunction]') this.auth = auth
     else throw new Error('no auth')
     if (router && router.config) this.router = router
@@ -175,8 +176,32 @@ module.exports = class Server extends Base {
   get ip () { return this._ip}
 
   checkrolesundgroups() {
-    return new Promise((resolve) => {
+    return new Promise((resolve,reject) => {
       //throw new Error('asdas');
+      let ok = []
+      if (!this.router.roles) this.router.roles = this.roles
+      if (!this.router.groups) this.router.groups = this.groups
+      for (const route of this.router.routes){
+          if (!this.router[route].roles) this.router[route].roles = this.router.roles
+          if (!this.router[route].groups) this.router[route].groups = this.router.groups
+          for (const method of this.router[route].methods) {
+            if (!this.router[route]._methods[method].check.roles) this.router[route]._methods[method].check.roles = this.router[route].roles
+            if (!this.router[route]._methods[method].check.groups) this.router[route]._methods[method].check.groups = this.router[route].groups
+            if (!this.router[route]._methods[method].check.roles) {
+              this.log_emerg({'no roles':{route,method}})
+              ok.push({roles:{route,method}})
+            }
+            if (!this.router[route]._methods[method].check.groups) {
+              this.log_emerg({'no groups':{route,method}})
+              ok.push({groups:{route,method}})
+            }
+                  //throw new Error('no roles ' + route + ' '+ meth
+          }
+      }
+      if (ok.length > 0) {
+        //reject(new Error('permissions not set ' + JSON.stringify(ok) ))
+        reject(ok)
+      }
       resolve()
     })
   }
@@ -191,15 +216,13 @@ module.exports = class Server extends Base {
           this._server.listen(this.port,this.ip,cb)
         }
       })
-      .catch((err)=>{
-        this.log_emerg({err})
+      .catch((error)=>{
+        this.log_emerg({error})
       })
   }
 
   get config () {
-    const conf = {}
-    conf.port = this.port
-    conf.ip = this.ip
+    const conf = super.config
     conf.auth = this.auth.config
     conf.router = this.router.config
     return conf
