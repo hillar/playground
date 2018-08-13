@@ -105,6 +105,13 @@ module.exports = class Route extends RolesAndGroups {
   get patch () {return this._methods.patch.fn}
   get delete () {return this._methods.delete.fn}
 
+  get route () { return this._route}
+  set route (route) {
+    if (!(Object.prototype.toString.call(route) === '[object String]')) throw new Error('route not a string ' + typeof route)
+    if (!route) throw new Error('can not route empty')
+    this._route = route
+  }
+
   get config () {
     const conf = {}
     for (const setting of this.setters){

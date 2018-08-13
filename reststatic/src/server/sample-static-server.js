@@ -6,8 +6,8 @@ const auth = new Auth(logger)
 
 const StaticRoute = require('./src/classes/staticroute')
 const Router = require('./src/classes/router')
-const router = new Router(logger,'routerRole','routerGroup',{
-  files: new StaticRoute(logger,'*','*','./src/classes/static')
+const router = new Router(logger,null,undefined,{
+  '/': new StaticRoute(logger,'*','*','./src/classes/static')
 })
 
 const Server = require('./src/classes/server')

@@ -56,12 +56,11 @@ module.exports = class StaticRoute extends Route {
       return result
     }
 
-    this.setMethod('get',getstaticfiles, roles, groups, ping)
+    this.setMethod('get',getstaticfiles, null, null, ping)
 
   }
 
   get root () { return this._root }
-  get route () { return this._route}
   get path () {
     if (this.root && this.route) {
       return path.join(this.root)
@@ -83,11 +82,4 @@ module.exports = class StaticRoute extends Route {
       this.log_warning({notexists:root})
     }
   }
-
-  set route (route) {
-    if (!(Object.prototype.toString.call(route) === '[object String]')) throw new Error('root not a string ' + typeof route)
-    if (!route) throw new Error('can not route empty')
-    this._route = route
-  }
-
 }

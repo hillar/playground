@@ -43,7 +43,6 @@ module.exports = class Server extends Base {
     } catch (err) {
       this.log_err('can not load ' + configFile)
     }
-    console.log('from file',conf)
     // patch conf with command line params
     for (const param of this.setters) {
       if (!!cliParams[param] && cliParams[param] != conf[param]) conf[param] = cliParams[param]
@@ -63,9 +62,10 @@ module.exports = class Server extends Base {
     }
 
     // conf ready
-    console.log('pathceds',conf)
     this.readConfig(conf)
 
+
+    // just dump conf
     if (cliParams.dumpConfig) {
       console.log('/* sample config */\nmodule.exports = ',JSON.stringify(this.config,null,4))
       process.exit(0)
@@ -121,6 +121,18 @@ module.exports = class Server extends Base {
       }
     })
 
+    this._server.on('listening', () => {
+      this.log_info('waiting for requests ...')
+
+    })
+    // test conf und stuff by running it
+    if (cliParams.testConfig) {
+      this._server.on('listening', () => {
+        this.log_info('closing test')
+        process.exit(0)
+      })
+    }
+
     this._server.on('close', () => {
       this.log_info('closing')
     })
@@ -169,11 +181,15 @@ module.exports = class Server extends Base {
     })
   }
 
-  listen () {
+  listen (cb) {
     this.checkrolesundgroups()
       .then( () => {
-        this.log_info({listening:{ip:this.ip,port:this.port}})
-        this._server.listen(this.port,this.ip)
+        if (this._server.listening) {
+          this.log_warning({listening_already:{ip:this.ip,port:this.port}})
+        } else {
+          this.log_info({listening:{ip:this.ip,port:this.port}})
+          this._server.listen(this.port,this.ip,cb)
+        }
       })
       .catch((err)=>{
         this.log_emerg({err})
