@@ -1,8 +1,7 @@
-const Logger = require('./src/classes/logger')
-const logger = new Logger()
+
 
 const Auth = require('./src/classes/authfreeipa')
-const auth = new Auth(logger)
+const auth = new Auth()
 
 const { params } = require('./src/classes/requtils')
 const router = {}
@@ -14,6 +13,6 @@ router.test = { get: (logger,user,req,res) => {
 }
 
 const Server = require('./src/classes/server')
-const server = new Server(logger, '*','*', auth, router)
+const server = new Server(null, '*','*', auth, router)
 
 server.listen()

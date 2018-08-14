@@ -10,18 +10,24 @@ const __ignore_setters___ = [
   'delete'
 ]
 
+const Logger = require('./logger')
+
 
 module.exports = class Base {
 
   constructor (logger) {
-    this.logger = logger
+    if (!logger) this.logger = new Logger()
+    else this.logger = logger
   }
 
   // everything has to have logging
   get logger () {return this._logger}
 
   set logger (logger) {
-    if (!logger) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: no logger' )
+    if (!logger) {
+      throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: no logger' )
+
+    }
     for (const method of LOGMETHODS){
       if (!logger[method] || !Object.prototype.toString.call(logger[method]) === '[object Function]') throw new Error(Object.getPrototypeOf(this).constructor.name +' :: logger has no method ' + method)
     }

@@ -134,7 +134,7 @@ module.exports = class Server extends AG {
         return
       }
       if (!user){
-        if (username) logger.info({reauth:username})
+        if (username) this.log_info({reauth:username})
         const header = `Basic realm=\"${auth.realm}\"`
         res.setHeader("WWW-Authenticate", header);
         res.writeHead(401)
@@ -149,17 +149,17 @@ module.exports = class Server extends AG {
         // set logger ctx to: route, method, user, ip
         // so it can be called from method just with message
         let logger = Object.assign(this._logger)
-        for (const method of LOGMETHODS){
-          logger['log_' + method] = (...messages) => {
+        for (const logmethod of LOGMETHODS){
+          logger['log_' + logmethod] = (...messages) => {
             let msg = []
-            let ctx = {req:{route,method,user:user.uid,ip:ip(req)}}
+            let ctx = {route,method,user:user.uid,ip:ip(req)}
             for (const m of messages) {
               if (m instanceof Object) {
-                ctx.req = Object.assign(ctx.req,m)
+                ctx = Object.assign(ctx,m)
               } else msg.push(m)
             }
-            if (msg.length > 0 ) ctx.req.messages = msg
-            logger[method](ctx)
+            if (msg.length > 0 ) ctx.messages = msg
+            logger[logmethod]({'request':ctx})
           }
         }
 
@@ -182,7 +182,7 @@ module.exports = class Server extends AG {
           })
           */
       } else {
-        logger.warning({user:user.uid,ip:ip(req),notexist:{method,route}})
+        this.log_warning({user:user.uid,ip:ip(req),notexist:{method,route}})
         res.writeHead(404)
         res.end()
       }
@@ -206,23 +206,23 @@ module.exports = class Server extends AG {
     })
 
     this._server.on('error', (err) => {
-      logger.err({err})
+      this.log_err({err})
     })
 
-    process.on('SIGHUP', function () {
-          logger.info('SIGHUP')
+    process.on('SIGHUP',  () => {
+          this.log_info('SIGHUP')
           // TODO reload conf
     })
 
-    process.on('SIGINT', function () {
+    process.on('SIGINT', () => {
       //  this._server.close(function () {
-          logger.info('SIGINT')
+          this.log_info('SIGINT')
           process.exit(0)
         //})
     })
 
-    process.on('SIGTERM', function () {
-        this._server.close(function () {
+    process.on('SIGTERM', () => {
+        this._server.close(() => {
           this.log_info('SIGTERM')
           process.exit(0)
         })
