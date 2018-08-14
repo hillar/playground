@@ -181,8 +181,6 @@ module.exports = class Server extends AG {
           }
         }
         try {
-          //await router[route][method]()
-          console.log(this.router[route]._methods[method].fn.toString())
           await this.router[route]._methods[method].fn(logger, user, req, res)
         } catch (e) {
           this.log_emerg({route,method,error:e.message})
