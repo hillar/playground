@@ -10,10 +10,10 @@
 
       let B = require('../../src/classes/rolesandgroups')
       t.equal(typeof B, 'function')
-      t.throws(() => {const y = new B()})
+      //t.throws(() => {const y = new B(null)})
       t.throws(() => {const x = new B({})})
       t.throws(() => {const y = new B('*')})
-      t.throws(() => {const y = new B(undefined,'*')})
+      //t.throws(() => {const y = new B(undefined,'*')})
       let b
       b = new B(l,null,null)
       t.equal(typeof b, 'object')

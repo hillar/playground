@@ -12,7 +12,7 @@
       t.equal(typeof B, 'function')
       //const z = new B(l,1,2)
       t.throws(() => {const x = new B({})})
-      t.throws(() => {const y = new B()})
+      t.throws(() => {const y = new B(1)})
       t.throws(() => {const y = new B(l,1)})
       t.throws(() => {const y = new B(l,'./',1)})
       let b = new B(l)

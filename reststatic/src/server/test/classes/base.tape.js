@@ -14,7 +14,7 @@ test('base class', function (t) {
   let B = require('../../src/classes/base')
   t.equal(typeof B, 'function')
   t.throws(() => {const x = new B({})})
-  t.throws(() => {const y = new B()})
+  t.throws(() => {const y = new B('a')})
   let b = new B(l)
   t.equal(typeof b, 'object')
   t.deepEqual(b.setters, [])
@@ -39,7 +39,7 @@ test('base class', function (t) {
   t.throws(() => {bb.logger = ''},'Error: BB :: no logger')
 
   t.throws(() => {const q = new BB({})},'Error: BB :: logger has no method ' + LOGMETHODS[0])
-  t.throws(() => {const w = new BB()})
+  t.throws(() => {const w = new BB(()=>{})})
 
 
 

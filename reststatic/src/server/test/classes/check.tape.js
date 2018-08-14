@@ -12,7 +12,7 @@
       let B = require('../../src/classes/check')
       t.equal(typeof B, 'function')
       t.throws(() => {const x = new B({})})
-      t.throws(() => {const y = new B()})
+      //t.throws(() => {const y = new B()})
       t.throws(() => {const x = new B(l,1)})
       let b
       b = new B(l)

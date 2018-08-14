@@ -10,7 +10,7 @@
       let B = require('../../src/classes/authfreeipa')
       t.equal(typeof B, 'function')
       t.throws(() => {const x = new B({})})
-      t.throws(() => {const y = new B()})
+      t.throws(() => {const y = new B(1)})
       t.throws(() => {const y = new B(l,1)})
       t.throws(() => {const y = new B(l,'./',1)})
       let b = new B(l)
