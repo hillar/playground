@@ -7,6 +7,8 @@ const METHODS = [
 ]
 
 const http = require('http')
+const LOGMETHODS  =  require('./logmethods')
+const {ip} = require('./requtils')
 const Check = require('./check')
 const RolesAndGroups = require('./rolesandgroups')
 
@@ -63,8 +65,22 @@ module.exports = class Route extends RolesAndGroups {
             let mr
             if (kind === '[object Function]') {
               mr = await new Promise((resolve) => {
+                let logger = Object.assign(this.logger)
+                for (const method of LOGMETHODS){
+                  logger['log_' + method] = (...messages) => {
+                    let msg = []
+                    let ctx = {req:{route:this.route,method:name,user:user.uid,ip:ip(req)}}
+                    for (const m of messages) {
+                      if (m instanceof Object) {
+                        ctx.req = Object.assign(ctx.req,m)
+                      } else msg.push(m)
+                    }
+                    if (msg.length > 0 ) ctx.req.messages = msg
+                    logger[method](ctx)
+                  }
+                }
                 try {
-                  const fr = fn(this.logger,user,req,res)
+                  const fr = fn(logger,user,req,res)
                   resolve(fr)
                 } catch (e) {
                   this.log_err(e,name)
@@ -73,7 +89,7 @@ module.exports = class Route extends RolesAndGroups {
               })
             } else {
               try {
-                mr = await fn(this.logger,user,req,res)
+                mr = await fn(logger,user,req,res)
               } catch (e) {
                 mr = false
                 this.log_err(e,name)
@@ -92,7 +108,7 @@ module.exports = class Route extends RolesAndGroups {
     }
 
   }
-
+  // TODO loop METHODS
   set get (fn) { this.setMethod('get',fn,null,null) }
   set post (fn) { this.setMethod('post',fn,null,null) }
   set put (fn) { this.setMethod('put',fn,null,null) }
@@ -105,13 +121,14 @@ module.exports = class Route extends RolesAndGroups {
   get patch () {return this._methods.patch.fn}
   get delete () {return this._methods.delete.fn}
 
+  /*
   get route () { return this._route}
   set route (route) {
     if (!(Object.prototype.toString.call(route) === '[object String]')) throw new Error('route not a string ' + typeof route)
     if (!route) throw new Error('can not route empty')
     this._route = route
   }
-
+  */
   get config () {
     const conf = {}
     for (const setting of this.setters){

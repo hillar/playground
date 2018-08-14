@@ -75,7 +75,7 @@ module.exports = class Base {
    // re-read the configuration
    readConfig (conf) {
     if (conf)  {
-       const settings = this.setters
+       //const settings = this.setters
        for (const setting of this.setters) {
          if (conf[setting] && !(this[setting] === conf[setting])){
            const m = {}

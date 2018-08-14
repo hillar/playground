@@ -2,6 +2,7 @@
 const http = require('http')
 const {ip} = require('./requtils')
 const AG = require('./rolesandgroups')
+
 const PORT = 4444
 const IP = '127.0.0.1'
 
@@ -20,8 +21,9 @@ module.exports = class Server extends AG {
       .version('0.0.1')
       .usage('[options]')
       .option('--ping','ping backends')
-      .option('-t, --test-config','test configuration')
+      .option('-t, --test','test configuration & permission')
       .option('-T, --dump-config','dump configuration')
+      .option('-P, --dump-permissions','dump roles & groups')
       .option('-c, --config [file]', 'set configuration file','./config.js')
       for (const param of this.setters) {
         cliParams.option('--'+param+ ' ['+typeof this[param]+']','server '+param+ ' (default: '+this[param]+')')
@@ -78,6 +80,19 @@ module.exports = class Server extends AG {
           process.exit(0)
         })
     }
+    // dump permissions
+    if (cliParams.dumpPermissions) {
+      this.checkrolesundgroups()
+      .then( () => {
+        console.log('route , method , roles , groups')
+        for (const route of this.router.routes){
+          for (const method of this.router[route].methods) {
+              console.log(route,',',method,',',this.router[route]._methods[method].check.roles,',',this.router[route]._methods[method].check.groups)
+            }
+        }
+        process.exit(0)
+      })
+    }
 
     this._server = http.createServer( async (req, res) => {
       let user
@@ -126,8 +141,9 @@ module.exports = class Server extends AG {
       this.log_info('waiting for requests ...')
 
     })
+
     // test conf und stuff by running it
-    if (cliParams.testConfig) {
+    if (cliParams.test) {
       this._server.on('listening', () => {
         this.log_info('closing test')
         process.exit(0)

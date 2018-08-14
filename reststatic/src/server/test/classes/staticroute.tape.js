@@ -6,10 +6,8 @@
       let l = new L()
       let B = require('../../src/classes/staticroute')
       t.throws(()=>{const a = new B(l,null,null,1)})
-      t.throws(()=>{const a = new B(l,null,null,'./',1)})
-      t.throws(()=>{const a = new B(l,null,null,'./','')})
-      t.throws(()=>{const a = new B(l,null,null,'/','abc')})
-      t.throws(()=>{const a = new B(l,null,null,'','abc')})
+      t.throws(()=>{const a = new B(l,null,null,'/')})
+      t.throws(()=>{const a = new B(l,null,null,'')})
       let b
       b = new B(l)
       t.deepEqual(b.methods,[ 'get' ])
@@ -18,6 +16,6 @@
       t.deepEqual(b.path,'sadas')
       b.groups = 'g'
       b.roles = 'r'
-      t.deepEqual(b.config,{ root: './sadas', route: 'kala', roles: 'r', groups: 'g', get: { roles: undefined, groups: undefined } })
+      t.deepEqual(b.config, { root: './sadas', roles: 'r', groups: 'g', get: { roles: undefined, groups: undefined } })
       t.end()
     })

@@ -10,28 +10,27 @@ const Route = require('./route')
 const { ip } = require('./requtils')
 
 const STATICROOT = './'
-const STATICROUTE = 'static'
 
 module.exports = class StaticRoute extends Route {
 
-  constructor (logger, roles, groups, root = STATICROOT, route = STATICROUTE) {
+  constructor (logger, roles, groups, root = STATICROOT) {
     super(logger, roles, groups)
     this.root = root
-    this.route = route
 
     const getstaticfiles = (logger, user, req, res) => {
       return new Promise( (resolve) => {
         let pe = path.parse(decodeURIComponent(req.url))
-        pe.dir = pe.dir.replace('/'+route,'')
+        // chop route from req path
+        pe.dir = pe.dir.replace('/'+this.route,'')
         const filename = path.join(this.path, pe.dir, pe.base)
         fs.readFile(filename, (err,content) => {
           if (err) {
-            logger.warning({'staticfiles':{user:user.uid,remoteip:ip(req),notexists:filename}})
+            logger.log_warning({notexists:filename})
             res.writeHead(404)
             res.end()
             resolve(false)
           } else {
-            logger.notice({'staticfiles':{user:user.uid,remoteip:ip(req),access:filename}})
+            logger.log_notice({access:filename})
             res.write(content)
             res.end()
             resolve(true)
