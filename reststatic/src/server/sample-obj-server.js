@@ -1,7 +1,7 @@
 
-
-const Auth = require('./src/classes/authfreeipa')
-const auth = new Auth()
+const auth = async (u,p) => {
+  return {uid:u,roles:[],groups:[]}
+}
 
 const { params } = require('./src/classes/requtils')
 const router = {}
@@ -13,6 +13,6 @@ router.test = { get: (logger,user,req,res) => {
 }
 
 const Server = require('./src/classes/server')
-const server = new Server(null, '*','*', auth, router)
+const server = new Server(null, 'maja','kala', auth, router)
 
 server.listen()

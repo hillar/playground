@@ -18,7 +18,7 @@ module.exports = class StaticRoute extends Route {
     this.root = root
 
     const getstaticfiles = (logger, user, req, res) => {
-      return new Promise( (resolve) => {
+      //return new Promise( (resolve) => {
         let pe = path.parse(decodeURIComponent(req.url))
         // chop route from req path
         pe.dir = pe.dir.replace('/'+this.route,'')
@@ -28,15 +28,15 @@ module.exports = class StaticRoute extends Route {
             logger.log_warning({notexists:filename})
             res.writeHead(404)
             res.end()
-            resolve(false)
+            //resolve(false)
           } else {
             logger.log_notice({access:filename})
             res.write(content)
             res.end()
-            resolve(true)
+            //resolve(true)
           }
         })
-      })
+      //})
     }
 
     const ping = async (u) => {

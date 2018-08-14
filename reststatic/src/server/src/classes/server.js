@@ -1,4 +1,5 @@
 //const Base = require('./base')
+const fs = require('fs')
 const http = require('http')
 const {ip} = require('./requtils')
 const AG = require('./rolesandgroups')
@@ -6,6 +7,7 @@ const METHODS = require('./routemethods')
 const LOGMETHODS = require('./logmethods')
 const Route = require('./route')
 const Router = require('./router')
+const AuthBase = require('./authbase')
 
 const PORT = 4444
 const IP = '127.0.0.1'
@@ -15,10 +17,21 @@ module.exports = class Server extends AG {
   constructor (logger, roles, groups, auth, router, config) {
     super(logger, roles, groups)
     if (auth && auth.setters && Object.prototype.toString.call(auth.verify) === '[object AsyncFunction]') this.auth = auth
-    else throw new Error('no auth')
+    else {
+      if (Object.prototype.toString.call(auth) === '[object AsyncFunction]') {
+        const a = new AuthBase(this._logger)
+        a.reallyVerify = auth
+        a.ping = async () => {
+          this._logger.info('auth mock')
+          return {uid:'mock',roles:['mock'],groups:['mock']}
+        }
+        this.auth = a
+      } else throw new Error('no auth')
+    }
+
     if (router && router.setters) this.router = router
     else {
-      const rr = new Router(logger)
+      const rr = new Router(this._logger)
       console.log('router',Object.keys(router))
       for (const name of Object.keys(router)){
         rr[name] = router[name]
@@ -31,7 +44,7 @@ module.exports = class Server extends AG {
     // check if is route
     for (const route of this.router.routes){
       if (!this.router[route].setters){
-        const r = new Route(logger)
+        const r = new Route(this._logger)
         r.route = route
         for (const name of Object.keys(this.router[route])){
           //if (!METHODS.includes(name)) throw new Error('method name not allowed: ' + name)
@@ -62,13 +75,18 @@ module.exports = class Server extends AG {
       }
       cliParams.parse(process.argv);
 
-    const configFile = cliParams.config || './config.js'
+    let configFile = cliParams.config || './config.js'
+    try {
+      configFile = fs.realpathSync(configFile)
+    } catch (e) {
+      //this.log_info({file:configFile,error:e})
+    }
     let conf = {}
     // load config file
     try {
       conf = require(configFile)
-    } catch (err) {
-      this.log_err('can not load ' + configFile)
+    } catch (e) {
+      this.log_info({file:configFile,error:e.message})
     }
     // patch conf with command line params
     for (const param of this.setters) {
@@ -145,7 +163,7 @@ module.exports = class Server extends AG {
       const method = req.method.toLowerCase()
       const route = decodeURIComponent(req.url).split('/')[1].toLowerCase()
 
-      if (router[route] && router[route][method]) {
+      if (this.router[route] && this.router[route]._methods[method].fn) {
         // set logger ctx to: route, method, user, ip
         // so it can be called from method just with message
         let logger = Object.assign(this._logger)
@@ -162,25 +180,17 @@ module.exports = class Server extends AG {
             logger[logmethod]({'request':ctx})
           }
         }
-
         try {
-          await router[route][method](logger, user, req, res)
+          //await router[route][method]()
+          console.log(this.router[route]._methods[method].fn.toString())
+          await this.router[route]._methods[method].fn(logger, user, req, res)
         } catch (e) {
-          this.log_err({route,method,error:e.message})
-          console.log(e)
+          this.log_emerg({route,method,error:e.message})
+          console.error(e)
+          res.writeHead(503)
+          res.end()
         }
         if (!res.finished) res.end()
-        /*
-        router[route][method](this._logger, user, req, res)
-          .then((r) => {
-            if (!res.finished) res.end()
-          })
-          .catch((e) => {
-            this.log_err({route,method,error:e.message})
-            if (!res.finished) res.end()
-            throw e
-          })
-          */
       } else {
         this.log_warning({user:user.uid,ip:ip(req),notexist:{method,route}})
         res.writeHead(404)
@@ -311,84 +321,3 @@ module.exports = class Server extends AG {
   }
 
 }
-
-
-// -----------------------------
-/*
-process.alias = 'test server'
-
-const Logger = require('./logger')
-const logger = new Logger()
-const Auth = require('./authfreeipa')
-const auth = new Auth(logger)
-
-// mock
-const none = null
-const justwait = (m,ms=1000) => {
-  return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve(Object.keys(m))
-            }, ms)
-        })
-      }
-//
-const Route = require('./route')
-//simple
-const s = new Route(logger)
-s.get = () => { console.log('-=GET=-') }
-s.post = async () => { console.log('=-POST-='); await justwait({},2); }
-// obj
-let roles = ['r1','r2']
-let groups = ['GROUP']
-const fn = async (logger,user,req,res) => {
-  //console.log(logger,user,req,res)
-  console.log('-----')
-  logger.info('start wait')
-  const u = await justwait(user)
-  logger.info('end wait, got ', JSON.stringify(u))
-  console.log('-----')
-  //throw new Error('ba baaa')
-  return false
-}
-
-s.delete = {roles, groups, fn}
-// obj + custom test
-s.patch = {roles:[], groups:'canPatch', fn, test:async (u)=>{console.log('custom test',u)}}
-
-
-const StaticRoute = require('./staticroute')
-
-const Router = require('./router')
-const router = new Router(logger,'routerRole','routerGroup',{
-  src: new StaticRoute(logger,'*','*','./static','src')
-})
-//const router = new Router(logger,'*','*')
-//router.kala = new Route(logger,'b',['a','b'],{get:()=>{return true}})
-
-let configFile = './config.js'
-configFile = './delete.me'
-
-const config = require(configFile)
-const Server = require('./server')
-const server = new Server(logger,auth,router)
-
-
-const args = process.argv.slice(2)
-// print out sample consfig
-if ((args.length === 1) && args[0].includes('config')) {
-  console.log('\nmodule.exports = ',JSON.stringify(server.config,null,4))
-  process.exit(0)
-}
-// TODO config
-
-//const config = require(configFile)
-server.readConfig(config)
-// test server
-if ((args.length === 1) && args[0].includes('ping')) {
-    server.ping((ok) => {
-      server.log_info({ping:ok})
-      process.exit(0)
-    })
-}
-server.listen()
-*/

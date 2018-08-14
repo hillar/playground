@@ -53,29 +53,30 @@ module.exports = class Route extends RolesAndGroups {
     this._methods[name] = {}
     this._methods[name].check = new RolesAndGroups(this.logger, roles, groups)
     this._methods[name].fn = (logger, user, req, res) => {
-      return new Promise(async (resolve,reject) => {
+      return new Promise(async (resolve) => {
         if (this._methods[name].check.isinroles(user.roles) && this._methods[name].check.isingroups(user.groups)) {
             this.log_info({route:this.route,method:name,user:user.uid,ip:ip(req)})
             // call the real method, can be async or normal func
-            let mr
+            let mr = 'ok'
             if (kind === '[object Function]') {
-              mr = await new Promise((resolve,reject) => {
-                let fr
+              mr = await new Promise((resolve) => {
+                let fr = 'ok'
                 try {
-                  fr = fn(logger,user,req,res)
+                  fn(logger,user,req,res)
                 } catch (e) {
                   this.log_emerg({route:this.route,method:name,kind,error:e.message})
                   console.log(e)
+                  fr = 'FUNCTION ERROR '+ e.message
                 }
                 resolve(fr)
               })
             } else {
               try {
-                mr = await fn(logger,user,req,res)
+                await fn(logger,user,req,res)
               } catch (e) {
-                mr = false
                 this.log_emerg({route:this.route,method:name,kind,error:e.message})
                 console.log(e)
+                mr = 'ASYNC ERROR '+ e.message
               }
             }
             resolve(mr)
@@ -83,7 +84,7 @@ module.exports = class Route extends RolesAndGroups {
           this.log_warning({'not allowed':{route:this.route,method:name,user:user.uid,ip:ip(req)}})
           res.writeHead(404)
           res.end()
-          resolve(false)
+          resolve('ok')
         }
       })
     }
@@ -93,18 +94,19 @@ module.exports = class Route extends RolesAndGroups {
 
   }
   // TODO loop METHODS
+
   set get (fn) { this.setMethod('get',fn,null,null) }
   set post (fn) { this.setMethod('post',fn,null,null) }
   set put (fn) { this.setMethod('put',fn,null,null) }
   set patch (fn) { this.setMethod('patch',fn,null,null) }
   set delete (fn) { this.setMethod('delete',fn,null,null) }
-
+/*
   get get () {return this._methods.get.fn}
   get post () {return this._methods.post.fn}
   get put () {return this._methods.put.fn}
   get patch () {return this._methods.patch.fn}
   get delete () {return this._methods.delete.fn}
-
+*/
   /*
   get route () { return this._route}
   set route (route) {
@@ -163,17 +165,28 @@ module.exports = class Route extends RolesAndGroups {
         res.write = () => {}
         res.writeHead = () => {}
         res.end = () => {}
-        let r
-        try {
-        r = await this[method](this._logger,user,req,res)
-        } catch (e) {
-          console.log(e)
+        let logger = Object.assign(this._logger)
+        for (const logmethod of LOGMETHODS){
+          logger['log_' + logmethod] = (...messages) => {
+            let msg = []
+            let ctx = {route,method,user:user.uid,ip:ip(req)}
+            for (const m of messages) {
+              if (m instanceof Object) {
+                ctx = Object.assign(ctx,m)
+              } else msg.push(m)
+            }
+            if (msg.length > 0 ) ctx.messages = msg
+            logger[logmethod]({'request':ctx})
+          }
         }
-        if (!r) {
+        try {
+          const r = await this._methods[method].fn(logger,user,req,res)
+          this.log_info({ping:r,route,method})
+          if (!(r === 'ok')) result = false
+        } catch (e) {
+          this.log_emerg({ping:'failed',note:'default',route,method,error:e.message})
+          console.log(e)
           result = false
-          this.log_err({ping:'failed',note:'default',route,method})
-        } else {
-          this.info({ping:'ok',note:'default',route,method})
         }
       }
     }
