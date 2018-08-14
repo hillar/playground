@@ -1,12 +1,6 @@
-const METHODS = [
-  'get',
-  'post',
-  'put',
-  'patch',
-  'delete'
-]
 
 const http = require('http')
+const METHODS = require('./routemethods')
 const LOGMETHODS  =  require('./logmethods')
 const {ip} = require('./requtils')
 const Check = require('./check')
@@ -59,46 +53,36 @@ module.exports = class Route extends RolesAndGroups {
     this._methods[name] = {}
     this._methods[name].check = new RolesAndGroups(this.logger, roles, groups)
     this._methods[name].fn = (logger, user, req, res) => {
-      return new Promise(async (resolve) => {
-        console.log('defined',name,this._methods[name].check.isdefined)
-        if (this._methods[name].check.isdefined || (this._methods[name].check.isinroles(user.roles) && this._methods[name].check.isingroups(user.groups))) {
+      return new Promise(async (resolve,reject) => {
+        if (this._methods[name].check.isinroles(user.roles) && this._methods[name].check.isingroups(user.groups)) {
+            this.log_info({route:this.route,method:name,user:user.uid,ip:ip(req)})
+            // call the real method, can be async or normal func
             let mr
             if (kind === '[object Function]') {
-              mr = await new Promise((resolve) => {
-                let logger = Object.assign(this.logger)
-                for (const method of LOGMETHODS){
-                  logger['log_' + method] = (...messages) => {
-                    let msg = []
-                    let ctx = {req:{route:this.route,method:name,user:user.uid,ip:ip(req)}}
-                    for (const m of messages) {
-                      if (m instanceof Object) {
-                        ctx.req = Object.assign(ctx.req,m)
-                      } else msg.push(m)
-                    }
-                    if (msg.length > 0 ) ctx.req.messages = msg
-                    logger[method](ctx)
-                  }
-                }
+              mr = await new Promise((resolve,reject) => {
+                let fr
                 try {
-                  const fr = fn(logger,user,req,res)
-                  resolve(fr)
+                  fr = fn(logger,user,req,res)
                 } catch (e) {
-                  this.log_err(e,name)
-                  resolve(false)
+                  this.log_emerg({route:this.route,method:name,kind,error:e.message})
+                  console.log(e)
                 }
+                resolve(fr)
               })
             } else {
               try {
                 mr = await fn(logger,user,req,res)
               } catch (e) {
                 mr = false
-                this.log_err(e,name)
+                this.log_emerg({route:this.route,method:name,kind,error:e.message})
+                console.log(e)
               }
             }
             resolve(mr)
-
         } else  {
-          this.log_warning('not allowed',{method:name,user})
+          this.log_warning({'not allowed':{route:this.route,method:name,user:user.uid,ip:ip(req)}})
+          res.writeHead(404)
+          res.end()
           resolve(false)
         }
       })
@@ -174,8 +158,17 @@ module.exports = class Route extends RolesAndGroups {
       } else {
         //this.log_notice({'ping default start':{route,method}})
         const req = new http.IncomingMessage()
+        // naive mock
         const res = {} //new http.ServerResponse()
-        const r = await this[method](this._logger,user,req,res)
+        res.write = () => {}
+        res.writeHead = () => {}
+        res.end = () => {}
+        let r
+        try {
+        r = await this[method](this._logger,user,req,res)
+        } catch (e) {
+          console.log(e)
+        }
         if (!r) {
           result = false
           this.log_err({ping:'failed',note:'default',route,method})

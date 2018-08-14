@@ -2,6 +2,10 @@
 const http = require('http')
 const {ip} = require('./requtils')
 const AG = require('./rolesandgroups')
+const METHODS = require('./routemethods')
+const LOGMETHODS = require('./logmethods')
+const Route = require('./route')
+const Router = require('./router')
 
 const PORT = 4444
 const IP = '127.0.0.1'
@@ -10,12 +14,32 @@ const IP = '127.0.0.1'
 module.exports = class Server extends AG {
   constructor (logger, roles, groups, auth, router, config) {
     super(logger, roles, groups)
-    if (auth && auth.config && Object.prototype.toString.call(auth.verify) === '[object AsyncFunction]') this.auth = auth
+    if (auth && auth.setters && Object.prototype.toString.call(auth.verify) === '[object AsyncFunction]') this.auth = auth
     else throw new Error('no auth')
-    if (router && router.config) this.router = router
-    else throw new Error('no router')
+    if (router && router.setters) this.router = router
+    else {
+      const rr = new Router(logger)
+      console.log('router',Object.keys(router))
+      for (const name of Object.keys(router)){
+        rr[name] = router[name]
+      }
+      this.router = rr
+    }
+    //throw new Error('no router')
     this.port = PORT
     this.ip = IP
+    // check if is route
+    for (const route of this.router.routes){
+      if (!this.router[route].setters){
+        const r = new Route(logger)
+        r.route = route
+        for (const name of Object.keys(this.router[route])){
+          //if (!METHODS.includes(name)) throw new Error('method name not allowed: ' + name)
+          r.setMethod(name,this.router[route][name])
+        }
+        this.router[route] = r
+      }
+    }
     const cliParams = require('commander')
     cliParams
       .version('0.0.1')
@@ -122,14 +146,41 @@ module.exports = class Server extends AG {
       const route = decodeURIComponent(req.url).split('/')[1].toLowerCase()
 
       if (router[route] && router[route][method]) {
-        router[route][method](this._logger, user,req, res)
-          .then((r)=>{
+        // set logger ctx to: route, method, user, ip
+        // so it can be called from method just with message
+        let logger = Object.assign(this._logger)
+        for (const method of LOGMETHODS){
+          logger['log_' + method] = (...messages) => {
+            let msg = []
+            let ctx = {req:{route,method,user:user.uid,ip:ip(req)}}
+            for (const m of messages) {
+              if (m instanceof Object) {
+                ctx.req = Object.assign(ctx.req,m)
+              } else msg.push(m)
+            }
+            if (msg.length > 0 ) ctx.req.messages = msg
+            logger[method](ctx)
+          }
+        }
+
+        try {
+          await router[route][method](logger, user, req, res)
+        } catch (e) {
+          this.log_err({route,method,error:e.message})
+          console.log(e)
+        }
+        if (!res.finished) res.end()
+        /*
+        router[route][method](this._logger, user, req, res)
+          .then((r) => {
             if (!res.finished) res.end()
           })
-          .catch((err)=>{
-            this.log_err({err})
+          .catch((e) => {
+            this.log_err({route,method,error:e.message})
             if (!res.finished) res.end()
+            throw e
           })
+          */
       } else {
         logger.warning({user:user.uid,ip:ip(req),notexist:{method,route}})
         res.writeHead(404)
