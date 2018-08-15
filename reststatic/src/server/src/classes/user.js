@@ -80,13 +80,13 @@ set  ln (ln) {
 
 set  ou (ou) {
 	if (!(Object.prototype.toString.call(ou) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: ou not string  ' + typeof ou)
-	if (!ou.trim()) this.log_info({uid:this.uid,empty:'ou'})
+	if (!ou.trim()) {}//this.log_info({uid:this.uid,empty:'ou'})
 	else this._ou = ou
 }
 
 set  manager (manager) {
 	if (!(Object.prototype.toString.call(manager) === '[object String]')) throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: manager not string  ' + typeof manager)
-	if (!manager.trim()) this.log_info({uid:this.uid,empty:'manager'})
+	if (!manager.trim()) {}//this.log_info({uid:this.uid,empty:'manager'})
 	else this._manager = manager
 }
 /*
@@ -98,7 +98,7 @@ if (Object.prototype.toString.call(emails) === '[object String]') emails = [emai
 if (Array.isArray(emails)) emails = zapArray(emails)
 else throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: emails not a string nor array'+ typeof emails)
 if (Array.isArray(emails) && emails.length > 0) this._emails = emails
-else this.log_notice({uid:this.uid,empty:'emails'})
+//else this.log_notice({uid:this.uid,empty:'emails'})
 
 }
 
@@ -107,7 +107,7 @@ if (Object.prototype.toString.call(phones) === '[object String]') phones = [phon
 if (Array.isArray(phones)) phones = zapArray(phones)
 else throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: phones not a string nor array'+ typeof phones)
 if (Array.isArray(phones) && phones.length > 0) this._phones = phones
-else this.log_info({uid:this.uid,empty:'phones'})
+//else this.log_info({uid:this.uid,empty:'phones'})
 
 }
 

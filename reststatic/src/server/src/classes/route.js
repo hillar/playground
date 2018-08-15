@@ -176,7 +176,7 @@ module.exports = class Route extends RolesAndGroups {
               } else msg.push(m)
             }
             if (msg.length > 0 ) ctx.messages = msg
-            logger[logmethod]({'request':ctx})
+            logger[logmethod]({'PING request':ctx})
           }
         }
         try {

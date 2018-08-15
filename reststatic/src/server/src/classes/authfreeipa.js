@@ -25,7 +25,7 @@ function fetch_ldap(url,dn,password,base,filter,attributes = [],sizeLimit = SIZE
       if (err) {
         //console.log('bind',err)
         client.unbind()
-        reject(err)
+        resolve(err)
       } else {
         try {
           const options = {
@@ -39,7 +39,7 @@ function fetch_ldap(url,dn,password,base,filter,attributes = [],sizeLimit = SIZE
               if (err) {
                 //console.log('search',err)
                 client.unbind()
-                reject(err)
+                resolve(err)
               } else {
                 res.on('searchEntry', function (entry) {
                   results.push(entry.object)
@@ -47,7 +47,7 @@ function fetch_ldap(url,dn,password,base,filter,attributes = [],sizeLimit = SIZE
                 })
                 res.on('error', function (err) {
                   client.unbind()
-                  reject(err)
+                  resolve(err)
                 })
                 res.on('end', function (result) {
                   client.unbind()
@@ -136,8 +136,6 @@ module.exports = class AuthFreeIPA extends AuthBase {
   }
 
   async reallyVerify (username,password) {
-    //let filter = `(&(${this.field}=${username})(memberof=cn=ipausers,cn=groups,cn=accounts,dc=ipa,dc=c3-lab))`
-    //cn=accounts,dc=ipa,dc=c3-lab
     let filter = `(&(${this.field}=${username})(memberof=cn=ipausers,cn=groups,${this.base}))`
     let attributes = 'krbPasswordExpiration'
     let u
@@ -145,17 +143,32 @@ module.exports = class AuthFreeIPA extends AuthBase {
       u = await fetch_ldap(this.url,this.binddn,this.bindpass,this.base,filter,attributes)
       //u = await fetch_ldap(this.url,this.binddn,this.bindpass,this.base,'uid=hillar',attributes)
       if (u instanceof Error) {
-        this.log_err({ERROR:u.message,raw:u})
+        if (u.message === 'No Such Object') {
+          this.log_alert({'binddn':this.binddn,error:u})
+          return new Error('wrong bind user')
+        }
+        if (u.message === 'Invalid Credentials') {
+          this.log_alert({'binddn':this.binddn,error:u})
+          return new Error('wrong bind password')
+        }
+        if (u.errno === 'ECONNREFUSED') {
+          this.log_alert({'url':this.url,error:u})
+          return new Error('no auth backend')
+        }
+        // something went very wrong ;(
+        this.log_emerg({BindError1:u})
+        console.log(u)
         return u
       }
     } catch (e) {
-      //console.log('fetch',e)
-      this.log_alert({msg:e.message,error:e})
+      // something went very wrong ;(
+      this.log_emerg({CatchBindError:e})
+      console.log(e)
       return e
     }
     if (!(u.length === 1)) {
-      this.log_warning({user:'not found ' + username})
-      return new Error('not found' + username)
+      this.log_notice({'notuser':username})
+      return new Error('not found')
     }
     u = u[0]
     // see https://github.com/freeipa/freeipa/blob/master/install/ui/src/freeipa/datetime.js
@@ -163,32 +176,40 @@ module.exports = class AuthFreeIPA extends AuthBase {
     const ed = e.slice(0,4)+'-'+e.slice(4,6)+'-'+e.slice(6,8)+'T'+e.slice(8,10)+':'+e.slice(10,12)+':'+e.slice(12,14)+'Z'
     const passwordExpiration = new Date(ed)
     if (!(passwordExpiration instanceof Date) || isNaN(passwordExpiration)) {
-      this.log_alert({user:{username,msg:'krbPasswordExpiration not date',krbPasswordExpiration:e}})
-      return new Error(username +' krbPasswordExpiration not date ')
+      this.log_emerg({user:{username,msg:'krbPasswordExpiration not date',krbPasswordExpiration:e}})
+      return new Error('krbPasswordExpiration not date ')
     }
     if (passwordExpiration < Date.now()){
-      this.log_notice({user:{username,msg:'password expired',krbPasswordExpiration:e}})
-      return new Error(username +' password expired')
+      //this.log_notice({user:{username,msg:'password expired',krbPasswordExpiration:e}})
+      return new Error('password expired')
     }
     // OK to check password
     let ru
     try {
       ru = await fetch_ldap(this.url,u.dn,password,this.base,filter)
       if (ru instanceof Error) {
-        this.log_err({user:{username,msg:ru.message,error:ru}})
+        if (ru.message === 'Invalid Credentials') {
+          //this.log_alert({'binddn':this.binddn,error:ru})
+          return new Error('wrong user password')
+        }
+        if (ru.errno === 'ECONNREFUSED') {
+          this.log_alert({'url':this.url,error:ru})
+          return new Error('no auth backend')
+        }
+        // something went very wrong ;(
+        this.log_emerg({BindError:ru,e:ru.message})
+        console.log(ru)
         return ru
       }
     } catch (e) {
-      if (e.message === 'Invalid Credentials') {
-        this.log_notice({user:{username,msg:e.message,error:e}})
-      } else {
-        this.log_err({user:{username,msg:e.message,error:e}})
-      }
+      // something went very wrong ;(
+      this.log_emerg({CatchBindError:e})
+      console.log(e)
       return e
     }
     if (!(ru.length === 1)) {
       this.log_alert({user:'to many' + username, users:ru})
-      return new Error('to many ' + username)
+      return new Error('to many users')
     }
     // password ok
     //copy out groups and roles

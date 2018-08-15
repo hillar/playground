@@ -1,5 +1,13 @@
+/*
+auth takes username and password and returns user object
 
-const auth = async (u,p) => {
+user object has to have:
+uid (string)
+roles (array)
+groups (array)
+
+*/
+const auth = async (username,password) => {
   return {uid:u,roles:[],groups:[]}
 }
 

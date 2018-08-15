@@ -91,11 +91,11 @@ module.exports = class AuthBase extends Base {
     return new Promise(async (resolve) => {
       if (!username.trim()) {
         this.log_alert('no username')
-        resolve({})
+        resolve(new Error('no username'))
       } else {
         if (!password.trim()) {
           this.log_alert({'no password': username})
-          resolve({})
+          resolve(new Error('no password'))
         } else {
           if (this._users[username]) {
             const now = Date.now()

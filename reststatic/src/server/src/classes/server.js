@@ -76,17 +76,21 @@ module.exports = class Server extends AG {
       cliParams.parse(process.argv);
 
     let configFile = cliParams.config || './config.js'
+    this._configFile = configFile
     try {
       configFile = fs.realpathSync(configFile)
+      this._configFile = configFile
     } catch (e) {
-      //this.log_info({file:configFile,error:e})
+      this._configFile = undefined
+      this.log_info({file:configFile,error:e})
     }
     let conf = {}
     // load config file
     try {
-      conf = require(configFile)
+      conf = require(this._configFile)
     } catch (e) {
       this.log_info({file:configFile,error:e.message})
+      this._configFile = undefined
     }
     // patch conf with command line params
     for (const param of this.setters) {
@@ -142,9 +146,9 @@ module.exports = class Server extends AG {
       const route = decodeURIComponent(req.url).split('/')[1].toLowerCase()
 
       const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
-      const strauth = new Buffer(b64auth, 'base64').toString()
+      const strauth = new Buffer.from(b64auth, 'base64').toString()
       const splitIndex = strauth.indexOf(':')
-      const username = strauth.substring(0, splitIndex)
+      const username = strauth.substring(0, splitIndex).toLowerCase()
       const password = strauth.substring(splitIndex + 1)
 
       let user
@@ -152,7 +156,24 @@ module.exports = class Server extends AG {
         user = await this.auth.verify(username, password,res)
       }
       if (user instanceof Error) {
-        this.log_notice({route,method,notuser:username,ip:ip(req)})
+        if (user.message === 'wrong user password' || user.message === 'not found') {
+          // ask password again
+          const reauth = {}
+          reauth[username] = user.message
+          this.log_info({reauth})
+          const header = `Basic realm=\"${auth.realm}\"`
+          res.setHeader("WWW-Authenticate", header);
+          res.writeHead(401)
+          res.end()
+          return
+        }
+        if (user.message === 'no auth backend') {
+          this.log_emerg({AuthError:user.message,route,method,user:username,ip:ip(req)})
+          res.writeHead(503)
+          res.end()
+          return
+        }
+        this.log_notice({AuthError:user.message,error:user,route,method,user:username,ip:ip(req)})
         res.writeHead(404)
         res.end()
         return
@@ -166,77 +187,87 @@ module.exports = class Server extends AG {
         return
       }
 
-
       if (this.router[route] && this.router[route]._methods[method].fn) {
         // set logger ctx to: route, method, user, ip
         // so it can be called from method just with message
+        // TODO test readability
+        // a {"Route":{"search":{"get":{"user":"hillar","ip":"127.0.0.1","search":"...","search2":"..."}}}}
+        // b {"Route":{"route":"search","method":"get","user":"hillar","ip":"127.0.0.1"}}
         let log = Object.assign(this._logger)
         for (const logmethod of LOGMETHODS){
           log['log_' + logmethod] = (...messages) => {
             let msg = []
-            let ctx = {route,method,user:user.uid,ip:ip(req)}
+            let ctx = {user:user.uid,ip:ip(req)}
             for (const m of messages) {
               if (m instanceof Object) {
                 ctx = Object.assign(ctx,m)
               } else msg.push(m)
             }
             if (msg.length > 0 ) ctx.messages = msg
-            log[logmethod]({'request':ctx})
+            const tmp = {}
+            tmp[route] = {}
+            tmp[route][method] = ctx
+            log[logmethod]({Route:tmp})
+            //log[logmethod]({Route:{route,method,user:user.uid,ip:ip(req)}})
           }
         }
+        //finally call method
         try {
           await this.router[route]._methods[method].fn(log, user, req, res)
         } catch (e) {
-          this.log_emerg({route,method,error:e.message})
+          this.log_emerg({RouteCatchError:{route,method,error:e.message}})
           console.error(e)
           res.writeHead(503)
           res.end()
         }
         if (!res.finished) res.end()
       } else {
-        this.log_warning({user:user.uid,ip:ip(req),notexist:{method,route}})
+        this.log_warning({RouteNotExist:{user:user.uid,ip:ip(req),method,route}})
         res.writeHead(404)
         res.end()
       }
       if (!res.finished) res.end() //end request whatever it was
     })
 
+
     this._server.on('listening', () => {
       this.log_info('waiting for requests ...')
-
     })
-
     // test conf und stuff by running it
     if (cliParams.test) {
       this._server.on('listening', () => {
-        this.log_info('closing test')
+        this.log_info('closing on --test')
         process.exit(0)
       })
     }
+
 
     this._server.on('close', () => {
       this.log_info('closing')
     })
 
     this._server.on('error', (err) => {
-      this.log_err({err})
+      this.log_err({ServerError:err})
     })
 
     process.on('SIGHUP',  () => {
-          this.log_info('SIGHUP')
+          this.log_info('got SIGHUP')
           // TODO reload conf
+          if (this._configFile) {
+
+          }
     })
 
     process.on('SIGINT', () => {
-      //  this._server.close(function () {
-          this.log_info('SIGINT')
+      this.log_info('got SIGINT')
+       this._server.close(() => {
           process.exit(0)
-        //})
+        })
     })
 
     process.on('SIGTERM', () => {
+        this.log_info('got SIGTERM')
         this._server.close(() => {
-          this.log_info('SIGTERM')
           process.exit(0)
         })
     })
@@ -292,7 +323,7 @@ module.exports = class Server extends AG {
         if (this._server.listening) {
           this.log_warning({listening_already:{ip:this.ip,port:this.port}})
         } else {
-          this.log_info({listening:{ip:this.ip,port:this.port}})
+          this.log_info({STARTING:{ip:this.ip,port:this.port}})
           this._server.listen(this.port,this.ip,cb)
         }
       })
