@@ -259,10 +259,15 @@ module.exports = class Server extends AG {
     })
 
     process.on('SIGINT', () => {
-      this.log_info('got SIGINT')
+      if (process.gotsinint) {
+        this.log_info('got another SIGINT, force exit')
+        process.exit(0)
+      }
+      this.log_info('got SIGINT, waiting to server close')
        this._server.close(() => {
           process.exit(0)
         })
+      if (!process.gotsinint) process.gotsinint = true
     })
 
     process.on('SIGTERM', () => {
