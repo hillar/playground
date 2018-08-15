@@ -71,13 +71,14 @@ module.exports = class AuthBase extends Base {
             this.filecache = false
             return
           }
+
+          if (this._cachefile) this.log_info({'setting cache file ': cf ,' loading cache from ' : this.cachefullname})
           this._cachefile = cf
-          this.log_info({'setting cache file ': cf ,' loading cache from ' : this.cachefullname})
           this._users = this.loadCache()
           return
       } else {
+        if (this._cachefile) this.log_info({'new users cache ':this._cachedir+'/'+cf})
         this._cachefile = cf
-        this.log_info({'new users cache ':this._cachedir+'/'+cf})
         this.saveCache()
       }
     }

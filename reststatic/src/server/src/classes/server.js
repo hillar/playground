@@ -82,14 +82,14 @@ module.exports = class Server extends AG {
       this._configFile = configFile
     } catch (e) {
       this._configFile = undefined
-      this.log_info({file:configFile,error:e})
+      if (!(configFile === './config.js')) this.log_info({Config:'no file ' + configFile})
     }
     let conf = {}
     // load config file
     try {
-      conf = require(this._configFile)
+      if (this._configFile) conf = require(this._configFile)
     } catch (e) {
-      this.log_info({file:configFile,error:e.message})
+      this.log_info({Config:configFile,error:e.message})
       this._configFile = undefined
     }
     // patch conf with command line params
