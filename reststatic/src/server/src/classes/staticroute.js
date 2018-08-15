@@ -17,7 +17,7 @@ module.exports = class StaticRoute extends Route {
     super(logger, roles, groups)
     this.root = root
 
-    const getstaticfiles = async (logger, user, req, res) => {
+    const getstaticfiles = async (log, user, req, res) => {
       const result = await new Promise( (resolve) => {
         let pe = path.parse(decodeURIComponent(req.url))
         // chop route from req path
@@ -25,12 +25,12 @@ module.exports = class StaticRoute extends Route {
         const filename = path.join(this.path, pe.dir, pe.base)
         fs.readFile(filename, (err,content) => {
           if (err) {
-            logger.log_warning({notexists:filename})
+            log.log_warning({notexists:filename})
             res.writeHead(404)
             res.end()
             resolve(false)
           } else {
-            logger.log_notice({access:filename})
+            log.log_notice({access:filename})
             res.write(content)
             res.end()
             resolve(true)

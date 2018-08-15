@@ -135,19 +135,25 @@ module.exports = class Server extends AG {
         process.exit(0)
       })
     }
-
+    // here comes a http server
     this._server = http.createServer( async (req, res) => {
-      let user
+
+      const method = req.method.toLowerCase()
+      const route = decodeURIComponent(req.url).split('/')[1].toLowerCase()
+
       const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
       const strauth = new Buffer(b64auth, 'base64').toString()
       const splitIndex = strauth.indexOf(':')
       const username = strauth.substring(0, splitIndex)
       const password = strauth.substring(splitIndex + 1)
+
+      let user
       if (username && password ) {
-        user = await this.auth.verify(username, password)
+        user = await this.auth.verify(username, password,res)
       }
       if (user instanceof Error) {
-        res.writeHead(503)
+        this.log_notice({route,method,notuser:username,ip:ip(req)})
+        res.writeHead(404)
         res.end()
         return
       }
@@ -160,15 +166,13 @@ module.exports = class Server extends AG {
         return
       }
 
-      const method = req.method.toLowerCase()
-      const route = decodeURIComponent(req.url).split('/')[1].toLowerCase()
 
       if (this.router[route] && this.router[route]._methods[method].fn) {
         // set logger ctx to: route, method, user, ip
         // so it can be called from method just with message
-        let logger = Object.assign(this._logger)
+        let log = Object.assign(this._logger)
         for (const logmethod of LOGMETHODS){
-          logger['log_' + logmethod] = (...messages) => {
+          log['log_' + logmethod] = (...messages) => {
             let msg = []
             let ctx = {route,method,user:user.uid,ip:ip(req)}
             for (const m of messages) {
@@ -177,11 +181,11 @@ module.exports = class Server extends AG {
               } else msg.push(m)
             }
             if (msg.length > 0 ) ctx.messages = msg
-            logger[logmethod]({'request':ctx})
+            log[logmethod]({'request':ctx})
           }
         }
         try {
-          await this.router[route]._methods[method].fn(logger, user, req, res)
+          await this.router[route]._methods[method].fn(log, user, req, res)
         } catch (e) {
           this.log_emerg({route,method,error:e.message})
           console.error(e)
@@ -194,6 +198,7 @@ module.exports = class Server extends AG {
         res.writeHead(404)
         res.end()
       }
+      if (!res.finished) res.end() //end request whatever it was
     })
 
     this._server.on('listening', () => {

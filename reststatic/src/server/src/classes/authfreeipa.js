@@ -164,11 +164,11 @@ module.exports = class AuthFreeIPA extends AuthBase {
     const passwordExpiration = new Date(ed)
     if (!(passwordExpiration instanceof Date) || isNaN(passwordExpiration)) {
       this.log_alert({user:{username,msg:'krbPasswordExpiration not date',krbPasswordExpiration:e}})
-      return {}
+      return new Error(username +' krbPasswordExpiration not date ')
     }
     if (passwordExpiration < Date.now()){
       this.log_notice({user:{username,msg:'password expired',krbPasswordExpiration:e}})
-      return {}
+      return new Error(username +' password expired')
     }
     // OK to check password
     let ru
