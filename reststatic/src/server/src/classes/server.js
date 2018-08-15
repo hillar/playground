@@ -32,7 +32,6 @@ module.exports = class Server extends AG {
     if (router && router.setters) this.router = router
     else {
       const rr = new Router(this._logger)
-      console.log('router',Object.keys(router))
       for (const name of Object.keys(router)){
         rr[name] = router[name]
       }
@@ -116,7 +115,7 @@ module.exports = class Server extends AG {
 
     // just dump conf
     if (cliParams.dumpConfig) {
-      console.log('/* sample config */\nmodule.exports = ',JSON.stringify(this.config,null,4))
+      console.log('/* config dump  */\nmodule.exports = ',JSON.stringify(this.config,null,4))
       process.exit(0)
     }
     // ping endpoints

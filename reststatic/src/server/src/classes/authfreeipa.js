@@ -16,14 +16,10 @@ function fetch_ldap(url,dn,password,base,filter,attributes = [],sizeLimit = SIZE
       tlsOptions: {rejectUnauthorized: rejectUnauthorized}
     })
     client.on('error',function(err){
-         //console.log('on',err.message)
          resolve(err)
        })
     client.bind(dn, password, (err)  => {
-      //console.log('dn',dn)
-      //console.log('password',password)
       if (err) {
-        //console.log('bind',err)
         client.unbind()
         resolve(err)
       } else {
@@ -35,15 +31,12 @@ function fetch_ldap(url,dn,password,base,filter,attributes = [],sizeLimit = SIZE
             sizeLimit: sizeLimit
           }
           client.search(base, options,(err, res) => {
-               //console.log('base',base)
               if (err) {
-                //console.log('search',err)
                 client.unbind()
                 resolve(err)
               } else {
                 res.on('searchEntry', function (entry) {
                   results.push(entry.object)
-                  //console.log(entry.object)
                 })
                 res.on('error', function (err) {
                   client.unbind()
@@ -56,15 +49,13 @@ function fetch_ldap(url,dn,password,base,filter,attributes = [],sizeLimit = SIZE
               }
             }
           )
-        } catch (err) {
-          //console.log('catch search',err)
+        } catch (e) {
           client.unbind()
-          reject(err)
+          reject(e)
         }
       }
     })
     } catch (e) {
-      //console.log('catch client',e)
       client.unbind()
       reject(e)
     }
@@ -83,8 +74,6 @@ module.exports = class AuthFreeIPA extends AuthBase {
     this.bindpass = bindpass
     this.field = field
     this.rejectUnauthorized = rejectUnauthorized
-
-    // this.bind()
   }
   //for i in server base binduser bindpass user pass field do echo "get $i () { return  this._$i }" done
   get url () {return  `${PROTO}://${this._server}:${PORT}`}
@@ -141,7 +130,6 @@ module.exports = class AuthFreeIPA extends AuthBase {
     let u
     try {
       u = await fetch_ldap(this.url,this.binddn,this.bindpass,this.base,filter,attributes)
-      //u = await fetch_ldap(this.url,this.binddn,this.bindpass,this.base,'uid=hillar',attributes)
       if (u instanceof Error) {
         if (u.message === 'No Such Object') {
           this.log_alert({'binddn':this.binddn,error:u})
@@ -157,13 +145,13 @@ module.exports = class AuthFreeIPA extends AuthBase {
         }
         // something went very wrong ;(
         this.log_emerg({BindError1:u})
-        console.log(u)
+        console.error(u)
         return u
       }
     } catch (e) {
       // something went very wrong ;(
       this.log_emerg({CatchBindError:e})
-      console.log(e)
+      console.error(e)
       return e
     }
     if (!(u.length === 1)) {
@@ -180,7 +168,6 @@ module.exports = class AuthFreeIPA extends AuthBase {
       return new Error('krbPasswordExpiration not date ')
     }
     if (passwordExpiration < Date.now()){
-      //this.log_notice({user:{username,msg:'password expired',krbPasswordExpiration:e}})
       return new Error('password expired')
     }
     // OK to check password
@@ -189,7 +176,6 @@ module.exports = class AuthFreeIPA extends AuthBase {
       ru = await fetch_ldap(this.url,u.dn,password,this.base,filter)
       if (ru instanceof Error) {
         if (ru.message === 'Invalid Credentials') {
-          //this.log_alert({'binddn':this.binddn,error:ru})
           return new Error('wrong user password')
         }
         if (ru.errno === 'ECONNREFUSED') {
@@ -198,13 +184,13 @@ module.exports = class AuthFreeIPA extends AuthBase {
         }
         // something went very wrong ;(
         this.log_emerg({BindError:ru,e:ru.message})
-        console.log(ru)
+        console.error(ru)
         return ru
       }
     } catch (e) {
       // something went very wrong ;(
       this.log_emerg({CatchBindError:e})
-      console.log(e)
+      console.error(e)
       return e
     }
     if (!(ru.length === 1)) {
@@ -218,7 +204,6 @@ module.exports = class AuthFreeIPA extends AuthBase {
     ru.groups = []
     for (const memberof of ru.memberOf) {
       if (memberof.endsWith(this.base)) {
-
         const tmp = memberof.split(',')
         const what = tmp[1]
         switch (tmp[1].split('=')[1]) {
@@ -231,11 +216,11 @@ module.exports = class AuthFreeIPA extends AuthBase {
           default:
                   this.log_alert({ERROR:{shouldnothappen:tmp}})
         }
-        //console.log('memberof',tmp)
       }
     }
+
     delete ru.memberOf
-    //console.log('ru',  ru)
+
     const ssn = ru.employeeNumber || ''
     const  ou = ru.ou || ''
     const manager = ru.manager || ''
@@ -243,14 +228,11 @@ module.exports = class AuthFreeIPA extends AuthBase {
     const phones = ru.mobile || []
 
     const fu = new User(this._logger,ru.uid,ssn,ru.givenName,ru.sn,ou,manager,emails,phones,ru.roles,ru.groups)
-    //console.log(fu.toObj())
 
     return fu.toObj()
   }
 
   async ping () {
-
-    //this.log_info({bind:{server:this.url,bind:{dn:this.binddn}}})
     const user = await this.verify(this.binduser,this.bindpass)
     if (user && user.uid && user.uid === this.binduser) {
       this.log_info({ping:'ok', server:this.url,bind:{dn:this.binddn}})
@@ -259,5 +241,4 @@ module.exports = class AuthFreeIPA extends AuthBase {
     }
     return user
   }
-
 }

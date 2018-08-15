@@ -72,12 +72,12 @@ module.exports = class AuthBase extends Base {
             return
           }
 
-          if (this._cachefile) this.log_info({'setting cache file ': cf ,' loading cache from ' : this.cachefullname})
+          if (this._cachefile !== cf) this.log_info({'setting cache file ': cf ,' loading cache from ' : this.cachefullname})
           this._cachefile = cf
           this._users = this.loadCache()
           return
       } else {
-        if (this._cachefile) this.log_info({'new users cache ':this._cachedir+'/'+cf})
+        if (this._cachefile !== cf) this.log_info({'new users cache ':this._cachedir+'/'+cf})
         this._cachefile = cf
         this.saveCache()
       }
@@ -113,14 +113,22 @@ module.exports = class AuthBase extends Base {
               }
             }
           } else {
-
-                  const user  = await this.reallyVerify(username,password)
+                  let user
+                  try {
+                    user  = await this.reallyVerify(username,password)
+                  } catch (e){
+                    this.log_emerg({reallyVerify:e.message})
+                    console.error(e)
+                    resolve(e)
+                    return
+                    //throw e
+                  }
                   if (user instanceof Error) {
                     resolve(user)
                     return
                   }
                   if (user.uid !== username) {
-                    resolve({})
+                    resolve(new Error('not original user'))
                   } else {
                   this._users[username] = user
                   this._users[username].lastVerify = Date.now()

@@ -69,10 +69,10 @@ function nowAsJSON(){
 
 module.exports = class Logger {
   constructor() {
+
     if (!process.alias) {
-      let fn = path.relative(process.cwd(), process.argv[1])
-      let dn = path.dirname(process.argv[1]).split('/').pop()
-      process.alias = fn === 'index.js' ? dn : fn.split('.').shift()
+      let pe = path.parse(process.argv[1])
+      process.alias = pe.base === 'index.js' ? pe.dir.split('/').pop() : pe.base
     }
     // TODO rfc5424 6.3.  STRUCTURED-DATA
     for (const method of SEVERITYLOG) {
