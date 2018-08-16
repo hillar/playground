@@ -20,13 +20,14 @@ module.exports = class Base {
     else this.logger = logger
   }
 
+  // know self
+  get typeof () {return Object.getPrototypeOf(this).constructor.name}
+
   // everything has to have logging
   get logger () {return this._logger}
-
   set logger (logger) {
     if (!logger) {
       throw new Error(Object.getPrototypeOf(this).constructor.name + ' :: no logger' )
-
     }
     for (const method of LOGMETHODS){
       if (!logger[method] || !Object.prototype.toString.call(logger[method]) === '[object Function]') throw new Error(Object.getPrototypeOf(this).constructor.name +' :: logger has no method ' + method)

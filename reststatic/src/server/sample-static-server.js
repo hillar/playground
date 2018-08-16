@@ -21,6 +21,6 @@ const router = new Router(logger,null,null,
   )
 
 const Server = require('./src/classes/server')
-const server = new Server(logger, '*','*', auth, router)
+const server = new Server(auth, router,'./config.js', '*','*', logger)
 
 server.listen()

@@ -1,6 +1,7 @@
 //const Base = require('./base')
 const fs = require('fs')
 const http = require('http')
+const { creatorName, objectType } = require('./helpers')
 const {ip} = require('./requtils')
 const AG = require('./rolesandgroups')
 const METHODS = require('./routemethods')
@@ -12,37 +13,63 @@ const AuthBase = require('./authbase')
 const PORT = 4444
 const IP = '127.0.0.1'
 
-
 module.exports = class Server extends AG {
-  constructor (logger, roles, groups, auth, router, config) {
+  constructor (auth, router, config, roles, groups, logger ) {
     super(logger, roles, groups)
-    if (auth && auth.setters && Object.prototype.toString.call(auth.verify) === '[object AsyncFunction]') this.auth = auth
-    else {
-      if (Object.prototype.toString.call(auth) === '[object AsyncFunction]') {
-        const a = new AuthBase(this._logger)
+
+    if (!auth) throw new Error('no auth')
+    if (auth instanceof AuthBase) {
+      this.auth = auth
+    } else {
+      // TODO allow normal function
+      if (objectType(auth) === '[object AsyncFunction]'){
+        const a = new AuthBase(this.logger)
         a.reallyVerify = auth
         a.ping = async () => {
           this._logger.info('auth mock')
           return {uid:'mock',roles:['mock'],groups:['mock']}
         }
         this.auth = a
-      } else throw new Error('no auth')
+      } else {
+        throw new Error('auth must be AsyncFunction or instance of AuthBase')
+      }
     }
-
+    /*
     if (router && router.setters) this.router = router
     else {
-      const rr = new Router(this._logger)
+      const rr = new Router(this._logger,this.roles, this.groups)
       for (const name of Object.keys(router)){
         rr[name] = router[name]
       }
       this.router = rr
     }
-    //throw new Error('no router')
+    */
+    if (!router) throw new Error('no router')
+    if (router instanceof Router) {
+      this.router = router
+    } else {
+      const rr = new Router(this._logger,this.roles, this.groups)
+      for (const name of Object.keys(router)){
+        rr[name] = router[name]
+      }
+      this.router = rr
+    }
     this.port = PORT
     this.ip = IP
     // check if is route
     for (const route of this.router.routes){
+      /*
       if (!this.router[route].setters){
+        const r = new Route(this._logger)
+        r.route = route
+        for (const name of Object.keys(this.router[route])){
+          //if (!METHODS.includes(name)) throw new Error('method name not allowed: ' + name)
+          r.setMethod(name,this.router[route][name])
+        }
+        this.router[route] = r
+      }
+      */
+      if (!(this.router[route] instanceof Route)) {
         const r = new Route(this._logger)
         r.route = route
         for (const name of Object.keys(this.router[route])){
@@ -57,8 +84,9 @@ module.exports = class Server extends AG {
       .version('0.0.1')
       .usage('[options]')
       .option('--ping','ping backends')
-      .option('-t, --test','test configuration & permission')
+      .option('-t, --test','test configuration & permissions')
       .option('-T, --dump-config','dump configuration')
+      .option('-U, --dump-config-undefined','dump configuration with undefined')
       .option('-P, --dump-permissions','dump roles & groups')
       .option('-c, --config [file]', 'set configuration file','./config.js')
       for (const param of this.setters) {
@@ -109,13 +137,17 @@ module.exports = class Server extends AG {
       }
     }
 
-    // conf ready
+    // conf ready, apply now
     this.readConfig(conf)
-
 
     // just dump conf
     if (cliParams.dumpConfig) {
-      console.log('/* config dump  */\nmodule.exports = ',JSON.stringify(this.config,null,4))
+      console.log('/* config dump  */\nmodule.exports = ',JSON.stringify(this.config,null,'\t'))
+      process.exit(0)
+    }
+    // dump conf with undefined as nulls
+    if (cliParams.dumpConfigUndefined) {
+      console.log('/* config dump  with undefined as nulls */\nmodule.exports = ',JSON.stringify(this.config,function(k, v) { if (v === undefined) { return null; } return v; },'\t'))
       process.exit(0)
     }
     // ping endpoints
@@ -332,7 +364,10 @@ module.exports = class Server extends AG {
         }
       })
       .catch((error)=>{
-        this.log_emerg({error})
+        // die because there is something wrong with permissions
+        this.log_emerg({BrokenPermisions:error})
+        console.error(new Error(JSON.stringify({BrokenPermisions:error})))
+        process.exit(1)
       })
   }
 
@@ -354,7 +389,8 @@ module.exports = class Server extends AG {
   async ping (fn) {
     this.log_info({ping:'---------------------------------------'})
     const user = await this.auth.ping()
-    const r = await this.router.ping(user)
+    let r
+    if (!(user instanceof Error)) r = await this.router.ping(user)
     fn(user && r)
   }
 

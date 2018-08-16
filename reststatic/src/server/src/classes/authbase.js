@@ -72,7 +72,7 @@ module.exports = class AuthBase extends Base {
             return
           }
 
-          if (this._cachefile !== cf) this.log_info({'setting cache file ': cf ,' loading cache from ' : this.cachefullname})
+          //if (this._cachefile !== cf) this.log_info({'setting cache file ': cf ,' loading cache from ' : this.cachefullname})
           this._cachefile = cf
           this._users = this.loadCache()
           return

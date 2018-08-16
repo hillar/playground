@@ -1,5 +1,6 @@
+const { objectType } = require('./helpers')
 const AG = require('./rolesandgroups')
-
+const Route = require('./route')
 module.exports = class Router extends AG {
 
   constructor (logger, roles, groups, ...routes) {
@@ -7,11 +8,21 @@ module.exports = class Router extends AG {
     super(logger,roles, groups)
 
     for (const route of routes) {
-      const name = Object.keys(route)[0]
-      this[name] = route[name]
-      this[name].route = name
+      const name = Object.keys(route).shift()
+      if (name) {
+        if (route[name] instanceof Route){
+          this[name] = route[name]
+          this[name].route = name
+        } else {
+          const r = new Route(this._logger)
+          r.route = route
+          for (const method of Object.keys(route[name])){
+            r.setMethod(method,route[name][method])
+          }
+          this[name] = r
+        }
+      }
     }
-
   }
 
   get routes () { return Object.keys(this)}
@@ -34,17 +45,6 @@ module.exports = class Router extends AG {
     return conf
   }
 
-  /*
-  get permissions () {
-    const perm = {}
-    perm.roles = this.roles
-    perm.groups = this.groups
-    for (const route of this.routes){
-      conf[route] = this[route].roles
-    }
-    return perm
-  }
-  */
   async ping (user) {
     this.log_info('pinging all routes')
     let result = true
@@ -63,19 +63,3 @@ module.exports = class Router extends AG {
 
   }
 }
-/*
-process.alias = 'test Router'
-let L = require('./logger')
-let l = new L()
-
-let R = require('./route')
-//let r = new R(l)
-//r.get = () => {}
-
-let RR = require('./router')
-let rr = new RR(l,'abc','1234')
-  static: new R(l,null,'qwerty',{get:()=>{}})
-})
-console.log(rr.config)
-//rr.test()
-**/

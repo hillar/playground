@@ -1,4 +1,5 @@
 #
+*.log
 users.json
 delete.me
 */node_modules
