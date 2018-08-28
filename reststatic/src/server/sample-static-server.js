@@ -5,11 +5,13 @@ const Auth = require('./src/classes/authfreeipa')
 const auth = new Auth(logger)
 
 const StaticRoute = require('./src/classes/staticroute')
+const SolrRoute = require('./src/sample/solr')
 const { params } = require('./src/classes/requtils')
 const Route = require('./src/classes/route')
 const Router = require('./src/classes/router')
 const router = new Router(logger,null,null,
   { 'html': new StaticRoute(logger,null,null,'./static')},
+  {  'doc': new SolrRoute(logger,null,null)},
   { 'search': new Route(logger,null,null,{
     get:(logger,user,req,res) => {
       const p = params(req)

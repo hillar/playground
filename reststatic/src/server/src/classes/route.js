@@ -55,7 +55,7 @@ module.exports = class Route extends RolesAndGroups {
     this._methods[name].fn = (logger, user, req, res) => {
       return new Promise(async (resolve) => {
         if (this._methods[name].check.isinroles(user.roles) && this._methods[name].check.isingroups(user.groups)) {
-            this.log_info({route:this.route,method:name,user:user.uid,ip:ip(req)})
+            //this.log_info({route:this.route,method:name,user:user.uid,ip:ip(req)})
             // call the real method, can be async or normal func
             let mr = 'ok'
             if (kind === '[object Function]') {

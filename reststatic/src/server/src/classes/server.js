@@ -119,6 +119,7 @@ module.exports = class Server extends AG {
       this.log_info({Config:configFile,error:e.message})
       this._configFile = undefined
     }
+
     // patch conf with command line params
     for (const param of this.setters) {
       if (!!cliParams[param] && cliParams[param] != conf[param]) conf[param] = cliParams[param]
@@ -133,7 +134,7 @@ module.exports = class Server extends AG {
       if (!conf.router[route]) conf.router[route] = {}
       for (const param of this.router[route].setters) {
         const cParam = route+param.charAt(0).toUpperCase() + param.slice(1)
-        if (cliParams[cParam] != conf.router[route][param]) conf.router[route][param] = cliParams[cParam]
+        if (!!cliParams[cParam] && cliParams[cParam] != conf.router[route][param]) conf.router[route][param] = cliParams[cParam]
       }
     }
 
@@ -161,7 +162,6 @@ module.exports = class Server extends AG {
     if (cliParams.dumpPermissions) {
       this.checkrolesundgroups()
       .then( () => {
-        console.log('route , method , roles , groups')
         for (const route of this.router.routes){
           for (const method of this.router[route].methods) {
               console.log(route,',',method,',',this.router[route]._methods[method].check.roles,',',this.router[route]._methods[method].check.groups)
@@ -218,7 +218,7 @@ module.exports = class Server extends AG {
         return
       }
 
-      if (this.router[route] && this.router[route]._methods[method].fn) {
+      if (this.router[route] && this.router[route]._methods[method] && this.router[route]._methods[method].fn) {
         // set logger ctx to: route, method, user, ip
         // so it can be called from method just with message
         // TODO test readability
@@ -322,7 +322,7 @@ module.exports = class Server extends AG {
   }
   get ip () { return this._ip}
 
-  checkrolesundgroups() {
+  checkrolesundgroups () {
     return new Promise((resolve,reject) => {
       //throw new Error('asdas');
       let ok = []
