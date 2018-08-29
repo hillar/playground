@@ -233,12 +233,11 @@ module.exports = class Server extends AG {
         process.exit(0)
       })
     }
-    // here comes a http server
+    // here comes a http server ---------------------------------------------------
     this._server = http.createServer( async (req, res) => {
 
       const method = req.method.toLowerCase()
-      const route = decodeURIComponent(req.url).split('/')[1].toLowerCase()
-
+      const route = decodeURIComponent(req.url).split('/')[1].toLowerCase().trim()
 
       const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
       const strauth = new Buffer.from(b64auth, 'base64').toString()
@@ -282,6 +281,12 @@ module.exports = class Server extends AG {
         return
       }
 
+      if (!route  && this.router.default) {
+        // 'http://'+this.ip+':'+this.port+'/'+route+'/'+
+        res.writeHead(301, {"Location": '/'+this.router.default+'/', "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0"});
+        res.end();
+        return
+      }
 
       if (this.router[route] && this.router[route]._methods[method] && this.router[route]._methods[method].fn) {
         // set logger ctx to: route, method, user, ip

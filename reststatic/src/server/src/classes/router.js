@@ -14,8 +14,13 @@ module.exports = class Router extends AG {
       configurable: true,
       writable: true
     })
+    Object.defineProperty(this, '_defaultroute', {
+      enumerable: false,
+      configurable: true,
+      writable: true
+    })
 
-    this.root = './src/html/routes'
+    this.htmlroot = './src/html/routes'
 
     for (const route of routes) {
       const name = Object.keys(route).shift()
@@ -23,7 +28,7 @@ module.exports = class Router extends AG {
         if (route[name] instanceof Route){
           this[name] = route[name]
           this[name].route = name
-          if (route[name].html && !route[name].htmlroot ) this[name].htmlroot = this.root+'/'+name
+          if (route[name].html && !route[name].htmlroot ) this[name].htmlroot = this.htmlroot+'/'+name
         } else {
           const r = new Route(this._logger)
           r.route = route
@@ -36,8 +41,14 @@ module.exports = class Router extends AG {
     }
   }
 
-  get root () { return this._root }
-  set root (root) {
+  get default () { return this._defaultroute }
+  set default (route) {
+    if (!this.routes.includes(route)) throw new Error('can not set as default, route not exist: ' + route)
+    this._defaultroute = route
+  }
+
+  get htmlroot () { return this._root }
+  set htmlroot (root) {
     if (!(Object.prototype.toString.call(root) === '[object String]')) throw new Error('router root not a string ' + typeof root)
     if (root === '/') throw new Error('router root must not be /')
     if (!root) throw new Error('router root must not be empty')

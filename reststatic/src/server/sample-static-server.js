@@ -21,7 +21,7 @@ const router = new Router(logger,null,null,
     })
   }
   )
-
+router.default = 'doc'
 const Server = require('./src/classes/server')
 const server = new Server(auth, router,'./config.js', '*','*', logger)
 
