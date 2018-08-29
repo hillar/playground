@@ -38,7 +38,14 @@ async function fetchJSON(proto, host, port, path, body){
           data += chunk;
         });
         res.on('end', () => {
-          resolve(JSON.parse(data))
+          try {
+            resolve(JSON.parse(data))
+          } catch (e) {
+
+            //console.log(res.statusCode,res.statusMessage,e.message)
+            if (res.statusCode === 200) reject(e)
+            else reject({code:res.statusCode,messege:res.statusMessage})
+          }
         });
         res.on('error', (error) => {
           reject(error)
@@ -71,10 +78,9 @@ module.exports = class SolrRoute extends Route {
     this.port = port
     this.collection = collection
 
-    const putDoc = async (log, user, req, res) => {
+    this.put = async (log, user, req, res) => {
+      const id = path.parse(decodeURIComponent(req.url)).name
       const result = await new Promise( async (resolve) => {
-        const id = path.parse(decodeURIComponent(req.url)).name
-
         let body = []
         req.on('data', (chunk) => {
           body.push(chunk)
@@ -82,57 +88,42 @@ module.exports = class SolrRoute extends Route {
           try {
             body = JSON.parse(Buffer.concat(body).toString())
           } catch (e) {
-            body = {}
             log.log_warning({notJSON:Buffer.concat(body).toString().slice(0,24)})
           }
-          resolve(body)
+          resolve({})
+          return
         })
 
       })
-      if (body.id && body.set) {
+      console.log(result)
+      if (result && result.id && result.set) {
         /*
         {"id":"mydoc",
         "sub_categories":{"add-distinct":"under_10"},
         */
+        console.log(result)
 
       } else log.log_warning({nodata:id})
       return result
     }
 
-    const getDoc = async (log, user, req, res) => {
-      const result = await new Promise( async (resolve) => {
-        const id = path.parse(decodeURIComponent(req.url)).name
-        let response
-        try {
-          response = await fetchJSON('http',this.host,this.port,`/solr/${this.collection}/select?q=id:${id}`)
-          if (response.response && response.response.docs && response.response.docs.length === 1) {
-            res.write(JSON.stringify(response.response.docs[0]))
-            log.log_notice({docid:id})
-          } else log.log_warning({SolrNotDoc:response.responseHeader.params.q})
-        } catch (e) {
-          log.log_err({host:this.host,error:e.message,e})
-        }
-        resolve(true)
-      })
-      return result
-    }
-
-    const ping = async (u) => {
-      const result = await new Promise( async (resolve)=>{
-            let response
-            try {
-              response = await fetchJSON('http',this.host,this.port,`/solr/${this.collection}/admin/ping?wt=json`)
-              this.log_info({ping:{host:this.host,response}})
-            } catch (e) {
-              this.log_err({ping:{host:this.host,error:e.message,e}})
-            }
-            resolve(response && response.status && response.status === 'OK')
-      })
-      return result
-    }
-
-    this.setMethod('get',getDoc, null, null, ping)
-    this.setMethod('put',putDoc, null, null, ping)
+    this.get = async (log, user, req, res) => {
+        const result = await new Promise( async (resolve) => {
+          const id = path.parse(decodeURIComponent(req.url)).name
+          let response
+          try {
+            response = await fetchJSON('http',this.host,this.port,`/solr/${this.collection}/select?q=id:${id}`)
+            if (response.response && response.response.docs && response.response.docs.length === 1) {
+              res.write(JSON.stringify(response.response.docs[0]))
+              log.log_notice({docid:id})
+            } else log.log_warning({SolrNotDoc:response.responseHeader.params.q})
+          } catch (e) {
+            log.log_err({host:this.host,error:e.message,e})
+          }
+          resolve(true)
+        })
+        return result
+      }
 
   }
 
@@ -142,5 +133,19 @@ module.exports = class SolrRoute extends Route {
   set port (port) { this._port = port }
   get collection () { return this._collection }
   set collection (collection) { this._collection = collection }
+
+  async ping () {
+    const result = await new Promise( async (resolve)=>{
+          let response
+          try {
+            response = await fetchJSON('http',this.host,this.port,`/solr/${this.collection}/admin/ping?wt=json`)
+            this.log_info({pingResult:{host:this.host,port:this.port,collection:this.connection,response}})
+          } catch (e) {
+            this.log_err({pingError:{host:this.host,port:this.port,collection:this.collection,error:e.message,e,r:response}})
+          }
+          resolve(response && response.status && response.status === 'OK')
+    })
+    return result
+  }
 
 }

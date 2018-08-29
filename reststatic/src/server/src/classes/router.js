@@ -15,7 +15,7 @@ module.exports = class Router extends AG {
       writable: true
     })
 
-    this.root = './routes'
+    this.root = './src/routes'
 
     for (const route of routes) {
       const name = Object.keys(route).shift()
@@ -97,6 +97,5 @@ module.exports = class Router extends AG {
       }
     }
     return result
-
   }
 }

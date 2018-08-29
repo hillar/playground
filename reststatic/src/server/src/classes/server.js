@@ -10,6 +10,20 @@ const Route = require('./route')
 const Router = require('./router')
 const AuthBase = require('./authbase')
 
+// TODO move to fileutils or smoething
+
+const { lstatSync, readdirSync } = require('fs')
+const { join } = require('path')
+const isDirectory = (source) => lstatSync(source).isDirectory()
+const isFile = (source) => lstatSync(source).isFile()
+
+const getDirectories = (source) => readdirSync(source)
+                                    .map(name => join(source,name))
+                                    .filter(isDirectory)
+                                    .map(n=>n.split('/').pop())
+
+const getFiles = (source) => readdirSync(source).map(name => join(source,name)).filter(isFile).map(n=>n.split('/').pop())
+
 const PORT = 4444
 const IP = '127.0.0.1'
 
@@ -272,7 +286,9 @@ module.exports = class Server extends AG {
     if (cliParams.test) {
       this._server.on('listening', () => {
         this.log_info('closing on --test')
-        process.exit(0)
+        this._server.close(() => {
+           process.exit(0)
+         })
       })
     }
 
@@ -360,6 +376,18 @@ module.exports = class Server extends AG {
   listen (cb) {
     this.checkrolesundgroups()
       .then( () => {
+        // do we have html & js for routes
+        /* TODO ...
+        if (this.router.root) {
+          console.log('checking',this.router.root)
+          for (const d of getDirectories(this.router.root)) {
+              console.log('found route',d)
+              for (const f of getFiles(join(this.router.root,d))) {
+                console.log('found file',d, f)
+              }
+          }
+        }
+        */
         if (this._server.listening) {
           this.log_warning({listening_already:{ip:this.ip,port:this.port}})
         } else {
