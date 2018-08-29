@@ -69,6 +69,7 @@ module.exports = class Server extends AG {
         this.router[route] = r
       }
       */
+      console.log('route',route)
       if (!(this.router[route] instanceof Route)) {
         const r = new Route(this._logger)
         r.route = route
@@ -94,6 +95,9 @@ module.exports = class Server extends AG {
       }
       for (const param of this.auth.setters) {
         cliParams.option('--auth-'+param + ' ['+typeof this.auth[param]+']','auth '+param+ ' (default: '+this.auth[param]+')')
+      }
+      for (const param of this.router.setters){
+        cliParams.option('--router-'+param + ' ['+typeof this.router[param]+']','auth '+param+ ' (default: '+this.router[param]+')')
       }
       for (const route of this.router.routes){
         for (const param of this.router[route].setters) {
