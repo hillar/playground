@@ -4,7 +4,7 @@ const logger = new Logger()
 const Auth = require('./src/classes/authfreeipa')
 const auth = new Auth(logger)
 
-const StaticRoute = require('./src/classes/staticroute')
+const StaticRoute = require('./src/sample/staticroute')
 const SolrRoute = require('./src/sample/solr')
 const { params } = require('./src/classes/requtils')
 const Route = require('./src/classes/route')

@@ -6,23 +6,28 @@ sample extended Route
 
 const fs = require('fs')
 const path = require('path')
-const Route = require('./route')
-const { ip } = require('./requtils')
+const Route = require('../classes/route')
+const { ip } = require('../classes/requtils')
 
 const STATICROOT = './'
+const DEFAULTFILE = 'index.html'
 
 module.exports = class StaticRoute extends Route {
 
-  constructor (logger, roles, groups, root = STATICROOT) {
-    
+  constructor (logger, roles, groups, root = STATICROOT, defaultfile = DEFAULTFILE) {
+
     super(logger, roles, groups)
     this.root = root
+    this.default = defaultfile
 
     this.get = async (log, user, req, res) => {
       const result = await new Promise( (resolve) => {
         let pe = path.parse(decodeURIComponent(req.url))
+        // if dir is / then use default
+        if (pe.dir === '/' && this.default) pe.base = this.default
         // chop route from req path
         pe.dir = pe.dir.replace('/'+this.route,'')
+
         const filename = path.join(this.path, pe.dir, pe.base)
         fs.readFile(filename, (err,content) => {
           if (err) {
@@ -42,6 +47,9 @@ module.exports = class StaticRoute extends Route {
     }
 
   }
+
+  get default () { return this._default }
+  set default (filename) { this._default = filename}
 
   get root () { return this._root }
   get path () {
