@@ -14,6 +14,7 @@ const STATICROOT = './'
 module.exports = class StaticRoute extends Route {
 
   constructor (logger, roles, groups, root = STATICROOT) {
+    
     super(logger, roles, groups)
     this.root = root
 
@@ -40,10 +41,6 @@ module.exports = class StaticRoute extends Route {
       return result
     }
 
-
-
-
-
   }
 
   get root () { return this._root }
@@ -68,6 +65,7 @@ module.exports = class StaticRoute extends Route {
       this.log_warning({notexists:root})
     }
   }
+
   async ping () {
     const result = await new Promise((resolve)=>{
       fs.access(this.path, fs.constants.R_OK, (err) => {
@@ -82,4 +80,5 @@ module.exports = class StaticRoute extends Route {
     })
     return result
   }
+
 }

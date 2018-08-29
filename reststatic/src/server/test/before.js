@@ -9,13 +9,25 @@ for (const src of files) {
   if (!fs.existsSync(test)){
     console.error('no test for', src)
     fs.writeFileSync(test,`
-    process.alias = 'test ${src}'
-    test = require('tape')
-    test('${src}', function (t) {
-      t.fail('no tests for ${src}')
-      t.end()
-    })
 
+process.alias = 'test ${src}'
+test = require('tape')
+test('${src}', function (t) {
+  t.fail('no tests for ${src}')
+  t.end()
+})
+
+    `)
+  }
+}
+for (const src of files) {
+  const doc = src.replace('/src/','/doc/').replace('.js','.md')
+  if (!fs.existsSync(doc)){
+    console.error('no doc for', src)
+    fs.writeFileSync(doc,`
+# ${src}
+
+see ${src}
     `)
   }
 }
