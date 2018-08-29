@@ -17,7 +17,7 @@ module.exports = class StaticRoute extends Route {
     super(logger, roles, groups)
     this.root = root
 
-    const getstaticfiles = async (log, user, req, res) => {
+    this.get = async (log, user, req, res) => {
       const result = await new Promise( (resolve) => {
         let pe = path.parse(decodeURIComponent(req.url))
         // chop route from req path
@@ -40,22 +40,9 @@ module.exports = class StaticRoute extends Route {
       return result
     }
 
-    const ping = async (u) => {
-      const result = await new Promise((resolve)=>{
-        fs.access(this.path, fs.constants.R_OK, (err) => {
-          if (err) {
-            this.log_err({ping:'failed',notexist:this.path})
-            resolve(false)
-          } else {
-            this.log_info({ping:'ok',readable:this.path})
-            resolve(true)
-          }
-        })
-      })
-      return result
-    }
 
-    this.setMethod('get',getstaticfiles, null, null, ping)
+
+
 
   }
 
@@ -80,5 +67,19 @@ module.exports = class StaticRoute extends Route {
       this._root = root
       this.log_warning({notexists:root})
     }
+  }
+  async ping () {
+    const result = await new Promise((resolve)=>{
+      fs.access(this.path, fs.constants.R_OK, (err) => {
+        if (err) {
+          this.log_err({ping:'failed',notexist:this.path})
+          resolve(false)
+        } else {
+          this.log_info({ping:'ok',readable:this.path})
+          resolve(true)
+        }
+      })
+    })
+    return result
   }
 }
