@@ -77,6 +77,7 @@ module.exports = class SolrRoute extends Route {
     this.host = host
     this.port = port
     this.collection = collection
+    this.html = true
 
     this.put = async (log, user, req, res) => {
       const id = path.parse(decodeURIComponent(req.url)).name

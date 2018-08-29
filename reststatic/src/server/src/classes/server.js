@@ -1,5 +1,6 @@
 //const Base = require('./base')
 const fs = require('fs')
+const path = require('path')
 const http = require('http')
 const { creatorName, objectType } = require('./helpers')
 const {ip} = require('./requtils')
@@ -15,7 +16,13 @@ const AuthBase = require('./authbase')
 const { lstatSync, readdirSync } = require('fs')
 const { join } = require('path')
 const isDirectory = (source) => lstatSync(source).isDirectory()
-const isFile = (source) => lstatSync(source).isFile()
+const isFile = (source) => {
+  try {
+  return lstatSync(source).isFile()
+  } catch (e) {
+    return false
+  }
+}
 
 const getDirectories = (source) => readdirSync(source)
                                     .map(name => join(source,name))
@@ -83,7 +90,7 @@ module.exports = class Server extends AG {
         this.router[route] = r
       }
       */
-      console.log('route',route)
+
       if (!(this.router[route] instanceof Route)) {
         const r = new Route(this._logger)
         r.route = route
@@ -99,10 +106,11 @@ module.exports = class Server extends AG {
       .version('0.0.1')
       .usage('[options]')
       .option('--ping','ping backends')
-      .option('-t, --test','test configuration & permissions')
+      .option('-t, --test','run once')
       .option('-T, --dump-config','dump configuration')
       .option('-U, --dump-config-undefined','dump configuration with undefined')
       .option('-P, --dump-permissions','dump roles & groups')
+      .option('-D, --create-dummy-html','create dummy html for routes')
       .option('-c, --config [file]', 'set configuration file','./config.js')
       for (const param of this.setters) {
         cliParams.option('--'+param+ ' ['+typeof this[param]+']','server '+param+ ' (default: '+this[param]+')')
@@ -169,6 +177,43 @@ module.exports = class Server extends AG {
       console.log('/* config dump  with undefined as nulls */\nmodule.exports = ',JSON.stringify(this.config,function(k, v) { if (v === undefined) { return null; } return v; },'\t'))
       process.exit(0)
     }
+    // create dummy html
+    if (cliParams.createDummyHtml){
+      if (!this.router.root) this.log_warning('no root dir for router html')
+      for (const route of this.router.routes){
+        if (this.router[route].html && this.router[route].htmlroot){
+          const html = join(this.router[route].htmlroot,route+'.html')
+          if (!isFile(html)) {
+            this.log_info({creating:html})
+            fs.writeFileSync(html,`
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>${route}</title>
+  </head>
+  <body>
+    DUMMY ${route}
+    <script src="${route}.js"></script>
+  </body>
+</html>
+              `)
+          }
+          else this.log_info({exists:html})
+          const js = join(this.router[route].htmlroot,route+'.js')
+          if (!isFile(js)) {
+            this.log_info({creating:js})
+            fs.writeFileSync(js,`
+              /*
+                ${route}
+              */
+              `)
+          }
+          else this.log_info({exists:js})
+        }
+      }
+      process.exit(0)
+    }
     // ping endpoints
     if (cliParams.ping) {
         this.ping((ok) => {
@@ -193,6 +238,7 @@ module.exports = class Server extends AG {
 
       const method = req.method.toLowerCase()
       const route = decodeURIComponent(req.url).split('/')[1].toLowerCase()
+
 
       const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
       const strauth = new Buffer.from(b64auth, 'base64').toString()
@@ -236,6 +282,7 @@ module.exports = class Server extends AG {
         return
       }
 
+
       if (this.router[route] && this.router[route]._methods[method] && this.router[route]._methods[method].fn) {
         // set logger ctx to: route, method, user, ip
         // so it can be called from method just with message
@@ -260,14 +307,59 @@ module.exports = class Server extends AG {
             //log[logmethod]({Route:{route,method,user:user.uid,ip:ip(req)}})
           }
         }
-        //finally call method
-        try {
-          await this.router[route]._methods[method].fn(log, user, req, res)
-        } catch (e) {
-          this.log_emerg({RouteCatchError:{route,method,error:e.message}})
-          console.error(e)
-          res.writeHead(503)
-          res.end()
+        // do we have some params
+        let params = decodeURIComponent(req.url).split('/')
+
+        params.shift()
+        params.shift()
+        params = params.join('/').trim()
+
+        if (params.length === 0 && this.router[route].html) {
+          // 'http://'+this.ip+':'+this.port+'/'+route+'/'+
+          res.writeHead(301, {"Location": '/'+route+'/'+route+'.html', "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0"});
+          res.end();
+          return
+        }
+
+        const giveFile = (filename) => new Promise(resolve => {
+          fs.readFile(filename, (err,content) => {
+            if (err) {
+              log.log_warning({notexists:filename})
+              res.writeHead(404)
+              res.end()
+              resolve(false)
+            } else {
+              log.log_notice({access:filename})
+              res.write(content)
+              res.end()
+              resolve(true)
+            }
+          })
+        })
+        switch (params) {
+
+          case route+'.html':
+            //res.write(path.join(this.router[route].htmlroot,route+'.html'))
+            await giveFile(path.join(this.router[route].htmlroot,route+'.html'))
+            break
+          case route+'.js':
+            //res.write(path.join(this.router[route].htmlroot,route+'.html'))
+            await giveFile(path.join(this.router[route].htmlroot,route+'.js'))
+            break
+          case route+'.css':
+            //res.write(path.join(this.router[route].htmlroot,route+'.html'))
+            await giveFile(path.join(this.router[route].htmlroot,route+'.css'))
+            break
+          //finally call method
+          default:
+          try {
+            await this.router[route]._methods[method].fn(log, user, req, res)
+          } catch (e) {
+            this.log_emerg({RouteCatchError:{route,method,error:e.message}})
+            console.error(e)
+            res.writeHead(503)
+            res.end()
+          }
         }
         if (!res.finished) res.end()
       } else {

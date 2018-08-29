@@ -15,7 +15,7 @@ module.exports = class Router extends AG {
       writable: true
     })
 
-    this.root = './src/routes'
+    this.root = './src/html/routes'
 
     for (const route of routes) {
       const name = Object.keys(route).shift()
@@ -23,6 +23,7 @@ module.exports = class Router extends AG {
         if (route[name] instanceof Route){
           this[name] = route[name]
           this[name].route = name
+          if (route[name].html && !route[name].htmlroot ) this[name].htmlroot = this.root+'/'+name
         } else {
           const r = new Route(this._logger)
           r.route = route

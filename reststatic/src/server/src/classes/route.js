@@ -18,7 +18,17 @@ module.exports = class Route extends RolesAndGroups {
         this.setMethod(name,method[name])
       } else throw new Error('not a method')
     }
+    Object.defineProperty(this, '_html', {
+      enumerable: false,
+      configurable: true,
+      writable: true
+    })
   }
+
+  set html (html) {this._html = html}
+  get html () { return this._html}
+  set htmlroot (root) {this._htmlroot = root}
+  get htmlroot () { return this._htmlroot}
 
   get methods () {
     const _methods = []
