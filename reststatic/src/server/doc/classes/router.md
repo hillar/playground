@@ -3,7 +3,7 @@
 
 see [source](../../src/classes/router.js)
 
-Router holds **[routes](router.md)**.
+Router holds **[routes](route.md)**.
 
 One of routes can be declared as default, then '/' will be redirected there.
 
@@ -13,3 +13,5 @@ Router can hold for routes:
 * htmlroot
 
 If not defined in route and defined in router, then route will inherit from router
+
+If not defined in router and defined in server, then router will inherit from server
