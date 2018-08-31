@@ -1,6 +1,6 @@
 const fs = require('fs')
 const path = require('path')
-const { objectType } = require('./helpers')
+const { objectType } = require('../utils/helpers')
 const AG = require('./rolesandgroups')
 const Route = require('./route')
 module.exports = class Router extends AG {

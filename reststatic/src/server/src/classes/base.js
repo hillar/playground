@@ -85,9 +85,9 @@ module.exports = class Base {
        //const settings = this.setters
        for (const setting of this.setters) {
          if (conf[setting] && !(this[setting] === conf[setting])){
-           const m = {}
-           m[setting] = {old:this[setting],new:conf[setting]}
-           this.log_notice({readConfig:m})
+           const configChanges = {}
+           configChanges[setting] = {old:this[setting],new:conf[setting]}
+           this.log_notice({configChanges})
            this[setting] = conf[setting]
          }
        }
