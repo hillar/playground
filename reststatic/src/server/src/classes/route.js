@@ -1,7 +1,7 @@
 
 const http = require('http')
-const METHODS = require('./routemethods')
-const LOGMETHODS  =  require('./logmethods')
+const METHODS = require('../constants/routemethods')
+const LOGMETHODS  =  require('../constants/logmethods')
 const {ip} = require('./requtils')
 const Check = require('./check')
 const RolesAndGroups = require('./rolesandgroups')

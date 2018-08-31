@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "commander": "^2.16.0",
+    "commander": "^2.17.1",
     "ldapjs": "^1.0.2"
   },
   "devDependencies": {
@@ -9,6 +9,6 @@
     "tape": "^4.9.1"
   },
   "scripts": {
-    "test": "node src/server/test/before.js; node_modules/tape/bin/tape src/server/test/*/*.tape.js; node_modules/lab/bin/lab src/server/test/*/*.lab.js" 
+    "test": "node src/server/test/before.js; node_modules/tape/bin/tape src/server/test/*/*.tape.js; node_modules/lab/bin/lab src/server/test/*/*.lab.js"
   }
 }

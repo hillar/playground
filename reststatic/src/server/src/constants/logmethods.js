@@ -6,5 +6,5 @@ module.exports = [
   'warning',
   'notice',
   'info',
-  'debug',
+  'debug'
 ]

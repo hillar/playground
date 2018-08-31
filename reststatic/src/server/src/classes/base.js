@@ -1,4 +1,4 @@
-const LOGMETHODS  =  require('./logmethods')
+const LOGMETHODS  =  require('../constants/logmethods')
 
 const __ignore_setters___ = [
   'logger',

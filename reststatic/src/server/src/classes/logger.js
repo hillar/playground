@@ -49,6 +49,8 @@ so "mixin" audit trail entries:
 const os = require('os')
 const path = require('path')
 
+const LOGMETHODS = require('../constants/logmethods')
+
 const SEVERITYERROR = [
   'emerg',
   'alert',
@@ -59,8 +61,12 @@ const SEVERITYLOG = [
   'warning',
   'notice',
   'info',
-  'debug',
+  'debug'
 ]
+
+// test if all LOGMETHODS exists here
+const tmp = [...SEVERITYLOG, ...SEVERITYERROR]
+if (!(LOGMETHODS.every( e => tmp.includes(e)))) throw new Error ('LOGMETHODS do not match')
 
 function nowAsJSON(){
   const now = new Date()

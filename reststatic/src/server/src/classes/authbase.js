@@ -23,11 +23,11 @@ const server = http.createServer( async (req, res) => {
 const fs = require('fs')
 const path = require('path')
 
-const USERCACHEFILENAME = 'users.json'
-const USERCACHEDIR = './'
-
 const Base = require('./base')
 const User = require('./user')
+
+const USERCACHEFILENAME = 'users.json'
+const USERCACHEDIR = './'
 
 module.exports = class AuthBase extends Base {
   constructor (logger,directory = USERCACHEDIR,filename = USERCACHEFILENAME) {
